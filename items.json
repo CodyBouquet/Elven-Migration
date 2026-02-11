@@ -1,0 +1,94 @@
+{
+    "basic_supplies": {
+        "food_small": {
+            "name": "Food (Small)",
+            "amount": 10,
+            "cost": 15,
+            "resource": "food",
+            "description": "Basic rations for 5 days"
+        },
+        "food_medium": {
+            "name": "Food (Medium)",
+            "amount": 50,
+            "cost": 70,
+            "resource": "food",
+            "description": "Enough to feed the party for 25 days"
+        },
+        "food_large": {
+            "name": "Food (Large)",
+            "amount": 100,
+            "cost": 130,
+            "resource": "food",
+            "description": "Bulk rations for extended journey"
+        },
+        "medicine_small": {
+            "name": "Medicine (Small)",
+            "amount": 5,
+            "cost": 25,
+            "resource": "medicine",
+            "description": "Basic healing supplies"
+        },
+        "medicine_medium": {
+            "name": "Medicine (Medium)",
+            "amount": 10,
+            "cost": 45,
+            "resource": "medicine",
+            "description": "Standard medical kit"
+        },
+        "medicine_large": {
+            "name": "Medicine (Large)",
+            "amount": 20,
+            "cost": 85,
+            "resource": "medicine",
+            "description": "Comprehensive healing supplies"
+        },
+        "arrows_small": {
+            "name": "Arrows (Small)",
+            "amount": 20,
+            "cost": 15,
+            "resource": "arrows",
+            "description": "Basic quiver of arrows"
+        },
+        "arrows_medium": {
+            "name": "Arrows (Medium)",
+            "amount": 50,
+            "cost": 35,
+            "resource": "arrows",
+            "description": "Large supply of arrows"
+        }
+    },
+    "special_items": {
+        "hunting_bow": {
+            "name": "Hunting Bow",
+            "cost": 80,
+            "description": "+50% food from hunting",
+            "stat": "hunting_efficiency",
+            "bonus": 0.5,
+            "bonus_type": "multiplicative"
+        },
+        "healers_kit": {
+            "name": "Healer's Kit",
+            "cost": 100,
+            "description": "+100% healing effectiveness",
+            "stat": "healing_power",
+            "bonus": 1.0,
+            "bonus_type": "multiplicative"
+        },
+        "lucky_charm": {
+            "name": "Lucky Charm",
+            "cost": 60,
+            "description": "+15% good event chance",
+            "stat": "luck",
+            "bonus": 0.15,
+            "bonus_type": "additive"
+        },
+        "sturdy_boots": {
+            "name": "Sturdy Boots",
+            "cost": 70,
+            "description": "+25% travel speed",
+            "stat": "travel_speed",
+            "bonus": 0.25,
+            "bonus_type": "multiplicative"
+        }
+    }
+}

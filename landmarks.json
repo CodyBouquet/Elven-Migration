@@ -1,0 +1,58 @@
+{
+  "landmarks": {
+    "cursed_forest": {
+      "name": "Cursed Forest",
+      "description": "Your dying homeland. The trees wither and darkness spreads.",
+      "distance_to_next": 200,
+      "next_landmark": "borderlands"
+    },
+    "borderlands": {
+      "name": "The Borderlands",
+      "description": "Lawless territory between elven and human lands. Bandits roam freely.",
+      "distance_to_next": 300,
+      "next_landmark": "human_kingdom",
+      "route_choice": {
+        "route_a": {
+          "name": "Main Road",
+          "description": "Well-traveled but heavily patrolled by bandits",
+          "difficulty": "medium",
+          "distance": 300,
+          "events": ["bandit_ambush", "friendly_traders"]
+        },
+        "route_b": {
+          "name": "Forest Path",
+          "description": "Safer but longer and harder to find food",
+          "difficulty": "hard",
+          "distance": 350,
+          "events": ["good_hunting", "harsh_storm"]
+        }
+      }
+    },
+    "human_kingdom": {
+      "name": "Kingdom of Arathor",
+      "description": "Human lands. They are suspicious of elven refugees.",
+      "distance_to_next": 400,
+      "next_landmark": "mountain_pass",
+      "special_event": "border_checkpoint"
+    },
+    "mountain_pass": {
+      "name": "Frostpeak Pass",
+      "description": "Treacherous mountain crossing. The air is thin and cold.",
+      "distance_to_next": 350,
+      "next_landmark": "ancient_ruins"
+    },
+    "ancient_ruins": {
+      "name": "Ruins of Kal'Thalas",
+      "description": "Once a great elven city, now abandoned for centuries.",
+      "distance_to_next": 250,
+      "next_landmark": "silverwood_vale",
+      "special_event": "ancient_treasure"
+    },
+    "silverwood_vale": {
+      "name": "Silverwood Vale",
+      "description": "Your destination. A hidden valley where the old magic still thrives.",
+      "distance_to_next": 0,
+      "is_final": true
+    }
+  }
+}

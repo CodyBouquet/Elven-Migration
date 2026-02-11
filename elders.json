@@ -1,0 +1,134 @@
+{
+  "elders": {
+    "thranduil": {
+      "name": "Thranduil the Wise",
+      "title": "Former High Council Leader",
+      "followers": 120,
+      "perk": {
+        "name": "Diplomatic Mastery",
+        "description": "Can negotiate with hostile groups, +30% chance to avoid combat",
+        "stat": "diplomacy",
+        "bonus": 0.3
+      },
+      "backstory": "Led the council for 200 years. His followers are loyal but aging.",
+      "specialty": "Negotiation and leadership"
+    },
+    "aelindra": {
+      "name": "Aelindra Swifthunter",
+      "title": "Master of the Hunt",
+      "followers": 85,
+      "perk": {
+        "name": "Expert Foraging",
+        "description": "+60% food from hunting and foraging events",
+        "stat": "hunting_efficiency",
+        "bonus": 0.6
+      },
+      "backstory": "Knows every beast and plant in the forest. Small but skilled group.",
+      "specialty": "Hunting and survival"
+    },
+    "miriel": {
+      "name": "Miriel Starweaver",
+      "title": "Archmage of the Grove",
+      "followers": 65,
+      "perk": {
+        "name": "Arcane Knowledge",
+        "description": "Can use powerful magic, +3 mana per day, spells cost -25%",
+        "stat": "mana_generation",
+        "bonus": 3
+      },
+      "backstory": "The most powerful mage, but few trust magic anymore.",
+      "specialty": "Magic and healing"
+    },
+    "kael": {
+      "name": "Kael Ironbark",
+      "title": "Captain of the Guard",
+      "followers": 95,
+      "perk": {
+        "name": "Tactical Warfare",
+        "description": "+50% combat power, lose 30% fewer followers in battles",
+        "stat": "combat_power",
+        "bonus": 0.5
+      },
+      "backstory": "Veteran warrior with disciplined soldiers. Ready for anything.",
+      "specialty": "Combat and defense"
+    },
+    "lyra": {
+      "name": "Lyra Moonwhisper",
+      "title": "High Priestess",
+      "followers": 110,
+      "perk": {
+        "name": "Divine Blessing",
+        "description": "Followers recover 2 health per day, +40% disease resistance",
+        "stat": "healing_power",
+        "bonus": 0.4
+      },
+      "backstory": "Beloved by the faithful. Her prayers sustain the wounded.",
+      "specialty": "Healing and morale"
+    },
+    "fenris": {
+      "name": "Fenris Shadowstep",
+      "title": "Master Scout",
+      "followers": 70,
+      "perk": {
+        "name": "Pathfinder",
+        "description": "+35% travel speed, can see danger ratings on routes",
+        "stat": "travel_speed",
+        "bonus": 0.35
+      },
+      "backstory": "Knows secret paths and shortcuts. His scouts are the fastest.",
+      "specialty": "Navigation and reconnaissance"
+    },
+    "aldric": {
+      "name": "Aldric Goldleaf",
+      "title": "Merchant Guildmaster",
+      "followers": 100,
+      "perk": {
+        "name": "Trade Network",
+        "description": "Start with +200 gold, -35% shop prices, +25% selling prices",
+        "stat": "merchant_discount",
+        "bonus": 0.35
+      },
+      "backstory": "Wealthy and connected. His caravan is well-supplied.",
+      "specialty": "Trade and resources"
+    },
+    "thalion": {
+      "name": "Thalion Earthshaper",
+      "title": "Master Builder",
+      "followers": 90,
+      "perk": {
+        "name": "Engineering Genius",
+        "description": "Can build defenses, bridges. -50% damage from environmental hazards",
+        "stat": "weather_resistance",
+        "bonus": 0.5
+      },
+      "backstory": "Built the great halls. His workers can overcome any obstacle.",
+      "specialty": "Construction and survival"
+    },
+    "seraphina": {
+      "name": "Seraphina Dawnbringer",
+      "title": "Oracle of the Stars",
+      "followers": 75,
+      "perk": {
+        "name": "Foresight",
+        "description": "+40% luck, can reroll one bad event per landmark",
+        "stat": "luck",
+        "bonus": 0.4
+      },
+      "backstory": "Sees glimpses of the future. Her visions have saved many.",
+      "specialty": "Prophecy and luck"
+    },
+    "vorian": {
+      "name": "Vorian the Unyielding",
+      "title": "Berserker Chief",
+      "followers": 130,
+      "perk": {
+        "name": "Fearless Horde",
+        "description": "+70% combat power but -20% diplomacy, followers fight harder",
+        "stat": "combat_power",
+        "bonus": 0.7
+      },
+      "backstory": "The largest warband. They never retreat, never surrender.",
+      "specialty": "All-out warfare"
+    }
+  }
+}

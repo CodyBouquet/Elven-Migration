@@ -1,0 +1,221 @@
+{
+  "positive_events": {
+    "found_supplies": {
+      "title": "Abandoned Cache",
+      "description": "Your scouts discover an abandoned supply cache hidden in the ruins of an old watchtower.",
+      "outcomes": [
+        {
+          "text": "Take everything",
+          "effects": {
+            "food": [10, 30],
+            "medicine": [2, 8],
+            "gold": [5, 20]
+          },
+          "outcome_description": "You take all the supplies, ensuring your group has enough food and resources."
+        },
+        {
+          "text": "Take only what you need",
+          "effects": {
+            "food": [5, 15],
+            "morale": 5
+          },
+          "outcome_description": "You take only the essentials, boosting the morale of your followers."
+        }
+      ]
+    },
+    "refugees_join": {
+      "title": "Refugees Seek Shelter",
+      "description": "A small group of refugees fleeing the forest asks to join your exodus.",
+      "outcomes": [
+        {
+          "text": "Welcome them (costs 20 food)",
+          "requirements": {"food": 20},
+          "effects": {
+            "food": -20,
+            "followers": [8, 15]
+          },
+          "outcome_description": "You welcome the refugees, providing them with food and shelter."
+        },
+        {
+          "text": "Turn them away",
+          "effects": {
+            "morale": -3
+          },
+          "outcome_description": "You turn away the refugees, which lowers the morale of your group."
+        }
+      ]
+    },
+    "good_hunting": {
+      "title": "Abundant Game",
+      "description": "Your hunters spot a herd of deer grazing in a nearby meadow.",
+      "outcomes": [
+        {
+          "text": "Hunt them (costs 10 arrows)",
+          "requirements": {"arrows": 10},
+          "effects": {
+            "arrows": -10,
+            "food": [20, 40],
+            "affected_by": "hunting_efficiency"
+          },
+          "outcome_description": "Your skilled hunters bring back a large haul of food."
+        },
+        {
+          "text": "Let them pass",
+          "effects": {},
+          "outcome_description": "You decide to let the deer pass, hoping for another opportunity later."
+        }
+      ]
+    },
+    "friendly_traders": {
+      "title": "Traveling Merchants",
+      "description": "A caravan of merchants offers to trade with you.",
+      "outcomes": [
+        {
+          "text": "Open trade menu",
+          "effects": {
+            "trigger": "trade_menu"
+          },
+          "outcome_description": "You begin a trade with the merchants, potentially gaining valuable supplies."
+        },
+        {
+          "text": "Decline",
+          "effects": {},
+          "outcome_description": "You decline the offer, choosing to rely on your current supplies."
+        }
+      ]
+    }
+  },
+  
+  "negative_events": {
+    "bandit_ambush": {
+      "title": "Bandit Ambush!",
+      "description": "Bandits emerge from the treeline, demanding your supplies!",
+      "outcomes": [
+        {
+          "text": "Fight them",
+          "effects": {
+            "trigger": "combat",
+            "enemy_strength": [20, 40]
+          },
+          "outcome_description": "You bravely confront the bandits in an attempt to protect your supplies."
+        },
+        {
+          "text": "Pay tribute (50 gold)",
+          "requirements": {"gold": 50},
+          "effects": {
+            "gold": -50
+          },
+          "outcome_description": "You choose to pay the bandits to avoid conflict, sacrificing some of your gold."
+        },
+        {
+          "text": "Negotiate (requires diplomacy)",
+          "requirements": {"stat": "diplomacy", "min_value": 0.2},
+          "effects": {
+            "gold": -20,
+            "success_chance": 0.7
+          },
+          "outcome_description": "You attempt to negotiate with the bandits, hoping to resolve the situation peacefully."
+        }
+      ]
+    },
+    "disease_outbreak": {
+      "title": "Disease Outbreak",
+      "description": "A fever spreads through the camp. Many are falling ill.",
+      "outcomes": [
+        {
+          "text": "Use medicine (costs 10)",
+          "requirements": {"medicine": 10},
+          "effects": {
+            "medicine": -10,
+            "followers": [-2, -5],
+            "affected_by": "disease_resistance"
+          },
+          "outcome_description": "You use your medicine to treat the sick, but some followers still succumb to the illness."
+        },
+        {
+          "text": "Quarantine and hope",
+          "effects": {
+            "followers": [-10, -20]
+          },
+          "outcome_description": "You decide to quarantine the sick, but the disease spreads, taking a toll on your followers."
+        }
+      ]
+    },
+    "harsh_storm": {
+      "title": "Violent Storm",
+      "description": "Dark clouds gather and a fierce storm batters your caravan.",
+      "outcomes": [
+        {
+          "text": "Push through",
+          "effects": {
+            "followers": [-5, -15],
+            "food": [-5, -10],
+            "affected_by": "weather_resistance"
+          },
+          "outcome_description": "You push through the storm, suffering losses but maintaining your course."
+        },
+        {
+          "text": "Make camp and wait (lose 1 day)",
+          "effects": {
+            "day": 1,
+            "food": -10
+          },
+          "outcome_description": "You decide to make camp, losing a day but protecting your followers from the storm."
+        }
+      ]
+    },
+    "deserters": {
+      "title": "Deserters",
+      "description": "Some followers have lost faith and are planning to leave.",
+      "outcomes": [
+        {
+          "text": "Let them go",
+          "effects": {
+            "followers": [-8, -15]
+          },
+          "outcome_description": "You allow the deserters to leave, which weakens your group."
+        },
+        {
+          "text": "Inspire them to stay (costs 30 gold)",
+          "requirements": {"gold": 30},
+          "effects": {
+            "gold": -30,
+            "followers": [-2, -5]
+          },
+          "outcome_description": "You spend gold to inspire the remaining followers to stay, but some still leave."
+        }
+      ]
+    }
+  },
+  
+  "neutral_events": {
+    "mysterious_shrine": {
+      "title": "Ancient Shrine",
+      "description": "You discover an ancient elven shrine, still radiating faint magic.",
+      "outcomes": [
+        {
+          "text": "Pray for blessing (costs 5 mana)",
+          "requirements": {"mana": 5},
+          "effects": {
+            "mana": -5,
+            "random_blessing": true
+          },
+          "outcome_description": "You pray at the shrine, hoping for a blessing in your journey."
+        },
+        {
+          "text": "Take the offerings (20 gold)",
+          "effects": {
+            "gold": 20,
+            "morale": -5
+          },
+          "outcome_description": "You take offerings from the shrine, gaining gold but at the cost of morale."
+        },
+        {
+          "text": "Leave it undisturbed",
+          "effects": {},
+          "outcome_description": "You choose to leave the shrine undisturbed, respecting its ancient power."
+        }
+      ]
+    }
+  }
+}

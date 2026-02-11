@@ -1,0 +1,45 @@
+{
+  "current_game": {
+    "day": 1,
+    "current_location": "cursed_forest",
+    "destination_landmark": "borderlands",
+    "distance_to_next_landmark": 200,
+    "total_distance_traveled": 0,
+    
+    "elders": [],
+    "total_followers": 0,
+    "max_followers": 0,
+    
+    "resources": {
+      "food": 0,
+      "mana": 0,
+      "gold": 500,
+      "medicine": 0,
+      "arrows": 0
+    },
+    
+    "special_items": [],
+    "route_difficulty": "medium",
+    "game_over": false
+  },
+  
+  "save_slots": {
+    "slot_1": null,
+    "slot_2": null,
+    "slot_3": null
+  },
+  
+  "unlocks": {
+    "hard_mode": false,
+    "ironman_mode": false,
+    "bonus_elders": []
+  },
+  
+  "lifetime_stats": {
+    "games_played": 0,
+    "games_won": 0,
+    "total_distance_traveled": 0,
+    "total_followers_lost": 0,
+    "fastest_completion_days": null
+  }
+}

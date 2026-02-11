@@ -1,0 +1,58 @@
+{
+  "intro": {
+    "title": "THE ELVEN EXODUS",
+    "text": [
+      "The Cursed Forest is dying.",
+      "The ancient trees that sheltered your people for millennia now wither and rot.",
+      "The High Council refuses to acknowledge the truth, clinging to tradition.",
+      "",
+      "But ten elders have chosen to defy them.",
+      "They will lead their loyal followers on a desperate exodus—",
+      "1600 leagues through hostile lands to Silverwood Vale,",
+      "a hidden sanctuary where the old magic still flows.",
+      "",
+      "You must choose four elders to lead this migration.",
+      "Their skills, their followers, and their courage will determine",
+      "whether your people survive... or perish in the wilderness."
+    ]
+  },
+  
+  "game_over": {
+    "all_dead": [
+      "The last of your followers falls to the ground.",
+      "The exodus has failed.",
+      "Your elders stand alone in the wilderness,",
+      "surrounded by the graves of those who trusted them.",
+      "",
+      "The dream of Silverwood Vale dies here."
+    ],
+    "starvation": [
+      "With no food left, your people grow weak.",
+      "One by one, they collapse from hunger.",
+      "The elders can only watch as their followers perish.",
+      "",
+      "The exodus ends not with battle, but with empty bellies."
+    ]
+  },
+  
+  "victory": {
+    "reached_vale": [
+      "After {days} days of hardship, you see it—",
+      "Silverwood Vale, nestled between ancient mountains.",
+      "The trees here are vibrant, untouched by the curse.",
+      "Magic flows through the air like music.",
+      "",
+      "Your {followers} remaining followers weep with joy.",
+      "The elders have led them to salvation.",
+      "",
+      "A new chapter begins for the elven people."
+    ]
+  },
+  
+  "warnings": {
+    "low_food": "⚠️ Food supplies are critically low! Your followers will starve soon.",
+    "low_followers": "⚠️ Your group is dangerously small. One more disaster could end the exodus.",
+    "low_gold": "⚠️ You have little gold left for emergencies.",
+    "no_medicine": "⚠️ You have no medicine. Disease could devastate your group."
+  }
+}
