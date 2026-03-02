@@ -17,9 +17,9 @@
           "text": "Take only what you need",
           "effects": {
             "food": [5, 15],
-            "morale": 5
+            "medicine": [1, 4]
           },
-          "outcome_description": "You take only the essentials, boosting the morale of your followers."
+          "outcome_description": "You take only the essentials, leaving some behind for other travelers."
         }
       ]
     },
@@ -34,14 +34,12 @@
             "food": -20,
             "followers": [8, 15]
           },
-          "outcome_description": "You welcome the refugees, providing them with food and shelter."
+          "outcome_description": "You welcome the refugees, providing them with food and shelter. They join your group."
         },
         {
           "text": "Turn them away",
-          "effects": {
-            "morale": -3
-          },
-          "outcome_description": "You turn away the refugees, which lowers the morale of your group."
+          "effects": {},
+          "outcome_description": "You reluctantly turn the refugees away. They disappear into the wilderness."
         }
       ]
     },
@@ -68,14 +66,25 @@
     },
     "friendly_traders": {
       "title": "Traveling Merchants",
-      "description": "A caravan of merchants offers to trade with you.",
+      "description": "A caravan of merchants offers to trade with you at fair prices.",
       "outcomes": [
         {
-          "text": "Open trade menu",
+          "text": "Buy food (costs 30 gold)",
+          "requirements": {"gold": 30},
           "effects": {
-            "trigger": "trade_menu"
+            "gold": -30,
+            "food": [25, 50]
           },
-          "outcome_description": "You begin a trade with the merchants, potentially gaining valuable supplies."
+          "outcome_description": "You purchase provisions from the merchants at a fair price."
+        },
+        {
+          "text": "Buy medicine (costs 25 gold)",
+          "requirements": {"gold": 25},
+          "effects": {
+            "gold": -25,
+            "medicine": [8, 15]
+          },
+          "outcome_description": "You stock up on healing supplies from the merchants."
         },
         {
           "text": "Decline",
@@ -83,9 +92,74 @@
           "outcome_description": "You decline the offer, choosing to rely on your current supplies."
         }
       ]
+    },
+    "medicinal_grove": {
+      "title": "Medicinal Grove",
+      "description": "Your foragers discover a clearing rich with healing herbs and rare plants.",
+      "outcomes": [
+        {
+          "text": "Harvest carefully",
+          "effects": {
+            "medicine": [8, 15],
+            "affected_by": "healing_power"
+          },
+          "outcome_description": "Your foragers carefully harvest the plants, yielding a generous supply of medicine."
+        },
+        {
+          "text": "Harvest quickly and move on",
+          "effects": {
+            "medicine": [4, 8],
+            "food": [5, 10]
+          },
+          "outcome_description": "You grab what you can quickly, taking some medicine and edible plants."
+        }
+      ]
+    },
+    "ancient_treasury": {
+      "title": "Elven Treasury",
+      "description": "Beneath the roots of a great fallen tree your scouts discover a sealed elven vault, untouched for centuries.",
+      "outcomes": [
+        {
+          "text": "Force it open (costs 1 day)",
+          "effects": {
+            "day": 1,
+            "gold": [30, 60],
+            "medicine": [5, 10]
+          },
+          "outcome_description": "The vault yields ancient gold and preserved medicine. The detour was well worth it."
+        },
+        {
+          "text": "Leave it sealed",
+          "effects": {},
+          "outcome_description": "You press on, leaving the vault undisturbed. Perhaps someone else will find it."
+        }
+      ]
+    },
+    "generous_wanderer": {
+      "title": "Wandering Healer",
+      "description": "A lone elven healer emerges from the treeline. She has been traveling alone for months and offers what she can to your group.",
+      "outcomes": [
+        {
+          "text": "Accept her medicine and aid",
+          "effects": {
+            "medicine": [5, 12],
+            "followers": [3, 7],
+            "affected_by": "healing_power"
+          },
+          "outcome_description": "She tends to the injured and leaves you with herbal remedies. A few lost stragglers she found along the way rejoin the group."
+        },
+        {
+          "text": "Ask her to join the exodus",
+          "effects": {
+            "followers": [8, 15],
+            "medicine": [3, 6]
+          },
+          "outcome_description": "She agrees to join and spreads word to other wanderers. A small group rallies to your exodus."
+        }
+      ]
     }
   },
-  
+
   "negative_events": {
     "bandit_ambush": {
       "title": "Bandit Ambush!",
@@ -95,9 +169,9 @@
           "text": "Fight them",
           "effects": {
             "trigger": "combat",
-            "enemy_strength": [20, 40]
+            "enemy_strength": [30, 60]
           },
-          "outcome_description": "You bravely confront the bandits in an attempt to protect your supplies."
+          "outcome_description": "Your warriors charge into the bandits. Blood is shed on both sides."
         },
         {
           "text": "Pay tribute (50 gold)",
@@ -105,16 +179,15 @@
           "effects": {
             "gold": -50
           },
-          "outcome_description": "You choose to pay the bandits to avoid conflict, sacrificing some of your gold."
+          "outcome_description": "You pay the bandits to leave. They take the gold and disappear into the trees."
         },
         {
           "text": "Negotiate (requires diplomacy)",
           "requirements": {"stat": "diplomacy", "min_value": 0.2},
           "effects": {
-            "gold": -20,
-            "success_chance": 0.7
+            "gold": -20
           },
-          "outcome_description": "You attempt to negotiate with the bandits, hoping to resolve the situation peacefully."
+          "outcome_description": "Your diplomat talks them down. They accept a smaller payment and stand aside."
         }
       ]
     },
@@ -130,14 +203,15 @@
             "followers": [-2, -5],
             "affected_by": "disease_resistance"
           },
-          "outcome_description": "You use your medicine to treat the sick, but some followers still succumb to the illness."
+          "outcome_description": "You treat the sick with medicine. Most recover, but some are lost."
         },
         {
           "text": "Quarantine and hope",
           "effects": {
-            "followers": [-10, -20]
+            "followers": [-15, -35],
+            "affected_by": "disease_resistance"
           },
-          "outcome_description": "You decide to quarantine the sick, but the disease spreads, taking a toll on your followers."
+          "outcome_description": "You isolate the sick and pray. The disease runs its course, taking many with it."
         }
       ]
     },
@@ -148,7 +222,7 @@
         {
           "text": "Push through",
           "effects": {
-            "followers": [-5, -15],
+            "followers": [-10, -25],
             "food": [-5, -10],
             "affected_by": "weather_resistance"
           },
@@ -160,20 +234,20 @@
             "day": 1,
             "food": -10
           },
-          "outcome_description": "You decide to make camp, losing a day but protecting your followers from the storm."
+          "outcome_description": "You make camp and wait out the storm. You lose a day but your followers are safe."
         }
       ]
     },
     "deserters": {
       "title": "Deserters",
-      "description": "Some followers have lost faith and are planning to leave.",
+      "description": "Some followers have lost faith and are planning to leave in the night.",
       "outcomes": [
         {
           "text": "Let them go",
           "effects": {
-            "followers": [-8, -15]
+            "followers": [-12, -22]
           },
-          "outcome_description": "You allow the deserters to leave, which weakens your group."
+          "outcome_description": "You allow the deserters to leave. Their absence weakens the group."
         },
         {
           "text": "Inspire them to stay (costs 30 gold)",
@@ -182,12 +256,122 @@
             "gold": -30,
             "followers": [-2, -5]
           },
-          "outcome_description": "You spend gold to inspire the remaining followers to stay, but some still leave."
+          "outcome_description": "You spend gold to motivate your followers. Most stay, but a few still slip away."
+        }
+      ]
+    },
+    "sickness_spreads": {
+      "title": "Sickness Spreads",
+      "description": "A mysterious fever moves through the weakest members of your group.",
+      "outcomes": [
+        {
+          "text": "Treat with medicine (costs 5)",
+          "requirements": {"medicine": 5},
+          "effects": {
+            "medicine": -5,
+            "followers": [-1, -3],
+            "affected_by": "disease_resistance"
+          },
+          "outcome_description": "Your healers tend to the sick. The fever passes quickly with treatment."
+        },
+        {
+          "text": "Push on and hope it passes",
+          "effects": {
+            "followers": [-5, -10],
+            "affected_by": "disease_resistance"
+          },
+          "outcome_description": "You press forward. The fever lingers, claiming several lives before it fades."
+        }
+      ]
+    },
+    "wolf_pack_attack": {
+      "title": "Wolf Pack!",
+      "description": "A pack of massive wolves descends on your camp in the night. Guards scramble to hold them back.",
+      "outcomes": [
+        {
+          "text": "Fight them off",
+          "effects": {
+            "trigger": "combat",
+            "enemy_strength": [15, 30]
+          },
+          "outcome_description": "Your warriors drive off the wolves with steel and torches. The pack retreats into the darkness."
+        },
+        {
+          "text": "Drive them away with fire (costs 15 food)",
+          "requirements": {"food": 15},
+          "effects": {
+            "food": -15,
+            "followers": [-1, -3]
+          },
+          "outcome_description": "You burn torches and food scraps to drive the wolves back. A few followers are bitten before the pack retreats."
+        }
+      ]
+    },
+    "collapsed_bridge": {
+      "title": "Collapsed Bridge",
+      "description": "The only bridge over a raging river has completely collapsed. Crossing is impossible without a plan.",
+      "outcomes": [
+        {
+          "text": "Hire locals to repair it (costs 40 gold)",
+          "requirements": {"gold": 40},
+          "effects": {
+            "gold": -40
+          },
+          "outcome_description": "Local workers rebuild the crossing in a day. It costs dearly but you cross without further delay."
+        },
+        {
+          "text": "Find an alternate ford (lose 2 days)",
+          "effects": {
+            "day": 2,
+            "food": -10
+          },
+          "outcome_description": "Scouts find a shallow crossing upstream but the long detour costs two full days and drains rations."
+        },
+        {
+          "text": "Attempt a dangerous crossing",
+          "effects": {
+            "followers": [-5, -15],
+            "food": [-5, -10]
+          },
+          "outcome_description": "You wade through the torrent. Several followers are swept away or badly injured in the crossing."
+        }
+      ]
+    },
+    "tainted_water": {
+      "title": "Poisoned Water Source",
+      "description": "Your water bearers return pale-faced — the river ahead is tainted with dark rot. Sickness is already spreading through camp.",
+      "outcomes": [
+        {
+          "text": "Treat the sick with medicine (costs 10)",
+          "requirements": {"medicine": 10},
+          "effects": {
+            "medicine": -10,
+            "followers": [-2, -5],
+            "affected_by": "disease_resistance"
+          },
+          "outcome_description": "Your healers move fast. Most of the afflicted survive with treatment, but a few succumb before it takes hold."
+        },
+        {
+          "text": "Ration water and push on",
+          "effects": {
+            "followers": [-8, -18],
+            "affected_by": "disease_resistance"
+          },
+          "outcome_description": "You press forward on minimal water. The sickness claims several lives before you reach clean water downstream."
+        },
+        {
+          "text": "Search for a clean source (lose 1 day)",
+          "effects": {
+            "day": 1,
+            "followers": [-3, -8],
+            "affected_by": "disease_resistance"
+          },
+          "outcome_description": "Scouts search for a clean source. The detour costs a day and some fall ill in the delay, but losses are lower."
         }
       ]
     }
   },
-  
+
   "neutral_events": {
     "mysterious_shrine": {
       "title": "Ancient Shrine",
@@ -198,22 +382,105 @@
           "requirements": {"mana": 5},
           "effects": {
             "mana": -5,
-            "random_blessing": true
+            "food": [10, 25],
+            "followers": [3, 8]
           },
-          "outcome_description": "You pray at the shrine, hoping for a blessing in your journey."
+          "outcome_description": "The shrine answers your prayer. Your followers feel renewed and supplies appear."
         },
         {
           "text": "Take the offerings (20 gold)",
           "effects": {
-            "gold": 20,
-            "morale": -5
+            "gold": 20
           },
-          "outcome_description": "You take offerings from the shrine, gaining gold but at the cost of morale."
+          "outcome_description": "You take offerings from the shrine, gaining gold but unsettling some followers."
         },
         {
           "text": "Leave it undisturbed",
           "effects": {},
-          "outcome_description": "You choose to leave the shrine undisturbed, respecting its ancient power."
+          "outcome_description": "You pass the shrine in respectful silence and continue on your way."
+        }
+      ]
+    },
+    "abandoned_outpost": {
+      "title": "Abandoned Elven Outpost",
+      "description": "The crumbling ruins of an old elven outpost emerge through the trees.",
+      "outcomes": [
+        {
+          "text": "Search for supplies (lose 1 day)",
+          "effects": {
+            "day": 1,
+            "gold": [10, 25],
+            "medicine": [2, 6]
+          },
+          "outcome_description": "You spend a day picking through the ruins. You find scattered gold and old medicine."
+        },
+        {
+          "text": "Rest here overnight",
+          "effects": {
+            "followers": [3, 8],
+            "food": -5,
+            "affected_by": "healing_power"
+          },
+          "outcome_description": "Sheltered walls give your followers proper rest. Some of the wounded recover."
+        },
+        {
+          "text": "Take what you can and move on",
+          "effects": {
+            "gold": [5, 15]
+          },
+          "outcome_description": "You grab a few valuables from the ruins and press on without stopping."
+        }
+      ]
+    },
+    "traveling_bard": {
+      "title": "Wandering Bard",
+      "description": "A cheerful bard crosses your path and offers to travel with you for a stretch, lifting the spirits of your weary followers.",
+      "outcomes": [
+        {
+          "text": "Pay for their company (costs 20 gold)",
+          "requirements": {"gold": 20},
+          "effects": {
+            "gold": -20,
+            "followers": [5, 12]
+          },
+          "outcome_description": "The bard's music and tales breathe new life into the exodus. Spirits soar and a few wanderers who hear the songs join your group."
+        },
+        {
+          "text": "Let them join for free",
+          "effects": {
+            "followers": [2, 5],
+            "food": -8
+          },
+          "outcome_description": "The bard joins in exchange for food and shelter. Their songs raise morale and a couple of nearby wanderers follow along."
+        }
+      ]
+    },
+    "abandoned_caravan": {
+      "title": "Abandoned Caravan",
+      "description": "The charred remains of a merchant caravan lie scattered across the road. Whatever happened here was recent.",
+      "outcomes": [
+        {
+          "text": "Search carefully (costs 1 day)",
+          "effects": {
+            "day": 1,
+            "gold": [15, 35],
+            "medicine": [3, 8],
+            "food": [10, 20]
+          },
+          "outcome_description": "You spend a day combing through the wreckage. Gold, medicine, and preserved food are salvaged from the debris."
+        },
+        {
+          "text": "Grab what's visible and move on",
+          "effects": {
+            "gold": [5, 15],
+            "food": [5, 10]
+          },
+          "outcome_description": "You quickly snatch visible valuables and loose rations before pressing on. Not much, but every bit counts."
+        },
+        {
+          "text": "Leave it — could be a trap",
+          "effects": {},
+          "outcome_description": "You press on, wary of ambushes. Better to be safe than greedy."
         }
       ]
     }

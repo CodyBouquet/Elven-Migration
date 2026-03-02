@@ -56,7 +56,7 @@ class ElvenExodusGUI:
     def create_widgets(self):
         """Create main UI elements"""
         # Status bar at top
-        self.status_frame = tk.Frame(self.root, bg='#2b2b2b', height=60)
+        self.status_frame = tk.Frame(self.root, bg='#2b2b2b', height=80)
         self.status_frame.pack(fill=tk.X, padx=10, pady=5)
         self.status_frame.pack_propagate(False)
         
@@ -155,15 +155,16 @@ class ElvenExodusGUI:
             self.button_frame,
             text=text,
             command=command,
-            font=('Arial', 12, 'bold'),
+            font=('Arial', 10, 'bold'),
             bg=color,
             fg='white',
-            padx=20,
-            pady=10,
+            padx=8,
+            pady=6,
             relief=tk.RAISED,
-            bd=2
+            bd=2,
+            wraplength=140
         )
-        btn.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.BOTH)
+        btn.pack(side=tk.LEFT, padx=3, expand=True, fill=tk.BOTH)
     
     def update_status(self):
         """Update the status bar"""
@@ -171,14 +172,20 @@ class ElvenExodusGUI:
             lm_key = self.game.get('current_landmark', '')
             lm = self.landmarks['landmarks'].get(lm_key, {})
             lm_name = lm.get('name', 'Unknown')
-            status = (
+            r = self.game['resources']
+            line1 = (
                 f"Day {self.game['day']}  |  "
                 f"Followers: {self.game['total_followers']}/{self.game['max_followers']}  |  "
-                f"Food: {self.game['resources']['food']}  |  "
-                f"Gold: {self.game['resources']['gold']}  |  "
-                f"{lm_name}: {self.game['distance_to_next_landmark']} leagues to next"
+                f"  {lm_name}  —  {self.game['distance_to_next_landmark']} leagues to next"
             )
-            self.status_label.config(text=status)
+            line2 = (
+                f"Food: {r['food']}  |  "
+                f"Gold: {r['gold']}  |  "
+                f"Medicine: {r['medicine']}  |  "
+                f"Arrows: {r['arrows']}  |  "
+                f"Mana: {r['mana']}"
+            )
+            self.status_label.config(text=f"{line1}\n{line2}")
     
     # ═══════════════════════════════════════════════════════
     # GAME FLOW
@@ -279,15 +286,23 @@ class ElvenExodusGUI:
             
             tk.Label(
                 frame,
-                text=f"Role: {elder['title']}",  # Changed to 'title' for clarity
+                text=f"{elder['title']}",
                 font=('Arial', 10),
                 bg='#1e1e1e',
                 fg='#569cd6'
             ).pack(anchor=tk.W, padx=30)
-            
+
             tk.Label(
                 frame,
-                text=f"Specialty: {elder['specialty']}",
+                text=f"Followers: {elder['followers']}  |  Starting Gold: {elder['starting_gold']}",
+                font=('Arial', 9, 'bold'),
+                bg='#1e1e1e',
+                fg='#d7ba7d'
+            ).pack(anchor=tk.W, padx=30)
+
+            tk.Label(
+                frame,
+                text=f"Perk: {elder['perk']['name']} — {elder['perk']['description']}",
                 font=('Arial', 9),
                 bg='#1e1e1e',
                 fg='#6a9955'
@@ -345,6 +360,11 @@ class ElvenExodusGUI:
         # Bug 12: start at first landmark with its segment distance
         first_lm = self.landmarks['landmarks']['cursed_forest']
 
+        # Gold = 100 base + each elder's starting_gold (replaces hardcoded 500 + Aldric special case)
+        starting_gold = 100 + sum(
+            self.elders['elders'][e['id']]['starting_gold'] for e in elders_list
+        )
+
         # Initialize game state
         self.game = {
             'day': 1,
@@ -354,7 +374,7 @@ class ElvenExodusGUI:
             'current_landmark': 'cursed_forest',
             'resources': {
                 'food': 0,
-                'gold': 500,
+                'gold': starting_gold,
                 'medicine': 0,
                 'arrows': 0,
                 'mana': 0
@@ -363,13 +383,10 @@ class ElvenExodusGUI:
             'distance_to_next_landmark': first_lm['distance_to_next'],
             'total_distance_traveled': 0,
             'days_without_food': 0,
+            'route_event_bonus': 0.0,
+            'shop_used_at': None,
             'game_over': False,
         }
-
-        # Apply Aldric's Trade Network bonus (+200 gold)
-        for elder in elders_list:
-            if elder['id'] == 'aldric':
-                self.game['resources']['gold'] += 200
         
         self.elder_window.destroy()
         self.update_status()
@@ -390,198 +407,8 @@ class ElvenExodusGUI:
         self.write_text("essentials for the long journey ahead.", '#dcdcaa')
         self.write_text("")
         
-        self.add_button("OPEN SHOP", self.open_shop, '#0e639c')
+        self.add_button("OPEN SHOP", self.open_landmark_shop, '#0e639c')
         self.add_button("BEGIN JOURNEY", self.start_journey, '#4ec9b0')
-    
-    def open_shop(self):
-        """Open shopping window"""
-        shop = tk.Toplevel(self.root)
-        shop.title("Supply Shop")
-        shop.geometry("600x500")  # Increased size for better visibility
-        shop.configure(bg='#2b2b2b')
-
-        tk.Label(
-            shop,
-            text="WELCOME TO THE SUPPLY SHOP",
-            font=('Arial', 16, 'bold'),
-            bg='#2b2b2b',
-            fg='#4ec9b0'
-        ).pack(pady=10)
-
-        # Create a Canvas and Scrollbar
-        canvas = tk.Canvas(shop, bg='#2b2b2b')
-        scrollbar = tk.Scrollbar(shop, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg='#2b2b2b')
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        # Pack the canvas and scrollbar
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        self.item_vars = {}
-        self.special_item_vars = {}
-        total_cost = 0  # Variable to keep track of total cost
-
-        # Label for total cost
-        total_cost_label = tk.Label(
-            shop,
-            text=f"Total Cost: {total_cost} gold",
-            font=('Arial', 12),
-            bg='#2b2b2b',
-            fg='white'
-        )
-        total_cost_label.pack(pady=5)
-
-        # Function to update total cost
-        def update_cost():
-            nonlocal total_cost
-            total_cost = sum(var.get() * self.items[category][item_id]['cost'] 
-                            for category in ['basic_supplies'] 
-                            for item_id, var in self.item_vars.items())
-            
-            # Add special items cost (only one can be selected)
-            special_cost = sum(var.get() * self.items['special_items'][item_id]['cost'] 
-                            for item_id, var in self.special_item_vars.items())
-            total_cost += special_cost
-            total_cost_label.config(text=f"Total Cost: {total_cost} gold")
-
-        # Iterate over basic supplies
-        tk.Label(scrollable_frame, text="General Supplies", font=('Arial', 14, 'bold'), bg='#2b2b2b', fg='white').pack(pady=5)
-
-        for item_id, item in self.items['basic_supplies'].items():
-            var = tk.IntVar(value=0)
-            self.item_vars[item_id] = var
-            
-            frame = tk.Frame(scrollable_frame, bg='#1e1e1e', relief=tk.RAISED, bd=2)
-            frame.pack(fill=tk.X, padx=10, pady=5)
-
-            tk.Label(
-                frame,
-                text=f"{item['name']} - {item['cost']} gold",
-                font=('Arial', 12, 'bold'),
-                bg='#1e1e1e',
-                fg='#dcdcaa'
-            ).pack(anchor=tk.W, padx=10)
-
-            tk.Label(
-                frame,
-                text=item['description'],
-                font=('Arial', 10),
-                bg='#1e1e1e',
-                fg='#569cd6'
-            ).pack(anchor=tk.W, padx=10)
-
-            entry = tk.Entry(
-                frame,
-                textvariable=var,
-                width=5,
-                font=('Arial', 12),
-                bg='#2b2b2b',
-                fg='#d4d4d4'
-            )
-            entry.pack(side=tk.RIGHT, padx=(10, 0))
-
-            # Bind entry to update total cost
-            var.trace_add('write', lambda *args: update_cost())
-
-        # Label for special items
-        tk.Label(scrollable_frame, text="Special Items", font=('Arial', 14, 'bold'), bg='#2b2b2b', fg='white').pack(pady=10)
-
-        for item_id, item in self.items['special_items'].items():
-            var = tk.IntVar(value=0)
-            self.special_item_vars[item_id] = var
-            
-            frame = tk.Frame(scrollable_frame, bg='#1e1e1e', relief=tk.RAISED, bd=2)
-            frame.pack(fill=tk.X, padx=10, pady=5)
-
-            tk.Label(
-                frame,
-                text=f"{item['name']} - {item['cost']} gold",
-                font=('Arial', 12, 'bold'),
-                bg='#1e1e1e',
-                fg='#dcdcaa'
-            ).pack(anchor=tk.W, padx=10)
-
-            tk.Label(
-                frame,
-                text=item['description'],
-                font=('Arial', 10),
-                bg='#1e1e1e',
-                fg='#569cd6'
-            ).pack(anchor=tk.W, padx=10)
-
-            # Use Checkbutton for special items
-            checkbutton = tk.Checkbutton(
-                frame,
-                variable=var,
-                command=update_cost,
-                bg='#1e1e1e'
-            )
-            checkbutton.pack(side=tk.RIGHT, padx=(10, 0))
-
-        # Purchase Button
-        tk.Button(
-            shop,
-            text="PURCHASE ITEMS",
-            command=lambda: self.purchase_items(shop, self.item_vars, self.special_item_vars),
-            font=('Arial', 12, 'bold'),
-            bg='#0e639c',
-            fg='white',
-            padx=20,
-            pady=10
-        ).pack(pady=10)
-
-        # Back Button
-        tk.Button(
-            shop,
-            text="BACK",
-            command=shop.destroy,  # Closes the shop window
-            font=('Arial', 12, 'bold'),
-            bg='#c41e3a',
-            fg='white',
-            padx=20,
-            pady=10
-        ).pack(pady=5)
-
-    def purchase_items(self, shop, item_vars, special_item_vars):
-        """Process the purchase of items"""
-        total_cost = sum(var.get() * self.items['basic_supplies'][item_id]['cost']
-                        for item_id, var in item_vars.items())
-        special_cost = sum(var.get() * self.items['special_items'][item_id]['cost']
-                          for item_id, var in special_item_vars.items())
-        total_cost += special_cost
-
-        if total_cost > self.game['resources']['gold']:
-            messagebox.showerror("Not Enough Gold",
-                                 f"You need {total_cost} gold but only have "
-                                 f"{self.game['resources']['gold']}.")
-            return
-
-        # Deduct gold
-        self.game['resources']['gold'] -= total_cost
-
-        # Add basic supply resources
-        for item_id, var in item_vars.items():
-            qty = var.get()
-            if qty > 0:
-                item = self.items['basic_supplies'][item_id]
-                self.game['resources'][item['resource']] += item['amount'] * qty
-
-        # Add special items (checkbox = 1 means purchased)
-        for item_id, var in special_item_vars.items():
-            if var.get() == 1 and item_id not in self.game['special_items']:
-                self.game['special_items'].append(item_id)
-
-        shop.destroy()
-        self.update_status()
-        self.start_journey()
     
     def start_journey(self):
         """Start or resume the journey screen"""
@@ -608,14 +435,15 @@ class ElvenExodusGUI:
         self.add_button("REST", self.rest, '#4ec9b0')
         self.add_button("HUNT", self.hunt, '#4ec9b0')
         self.add_button("FORAGE", self.forage, '#4ec9b0')
+        self.add_button("CAST", self.cast_spell, '#c586c0')
         self.add_button("SAVE", self.show_save_screen, '#b267e6')
 
     def _consume_food(self):
         """Consume food for the day and apply starvation. (Bugs 5 & 11)"""
         stats = calculate_stats(self.game, self.items, self.elders)
-        # Bug 11: align with game_logic.py — 1 food per 10 followers
+        # 1 food per 7 followers
         # food_efficiency > 1.0 means more efficient (less consumed); division is correct
-        food_needed = self.game['total_followers'] // 10
+        food_needed = self.game['total_followers'] // 7
         food_consumed = max(1, int(food_needed / stats['food_efficiency']))
         self.game['resources']['food'] -= food_consumed
         self.write_text(f"Consumed {food_consumed} food.", '#6a9955')
@@ -623,8 +451,8 @@ class ElvenExodusGUI:
         if self.game['resources']['food'] < 0:
             self.game['resources']['food'] = 0
             self.game['days_without_food'] += 1
-            # Bug 5: escalating 1%-per-day percentage instead of abs(food)*2
-            pct = 0.01 * self.game['days_without_food']
+            # Escalating 2%-per-day starvation (increases severity each consecutive day)
+            pct = 0.02 * self.game['days_without_food']
             deaths = max(1, int(self.game['total_followers'] * pct))
             deaths = min(deaths, self.game['total_followers'])
             self.game['total_followers'] -= deaths
@@ -641,8 +469,9 @@ class ElvenExodusGUI:
             self.show_game_over("All followers have perished.")
             return
 
-        if random.random() < 0.2:
-            # Bug 7: show buttons for player choice; finish_day called after selection
+        stats = calculate_stats(self.game, self.items, self.elders)
+        event_chance = 0.45 + stats['luck'] + self.game.get('route_event_bonus', 0.0)
+        if random.random() < event_chance:
             self.resolve_event(on_done=lambda: self.finish_day(traveled=True))
         else:
             self.write_text("The day passes without incident.", '#d7ba7d')
@@ -659,6 +488,12 @@ class ElvenExodusGUI:
 
         self.game['day'] += 1
 
+        # Mana generation (Miriel's perk)
+        stats = calculate_stats(self.game, self.items, self.elders)
+        if stats['mana_generation'] > 0:
+            self.game['resources']['mana'] += stats['mana_generation']
+            self.write_text(f"Generated {stats['mana_generation']} mana.", '#c586c0')
+
         # Bug 12: check landmark arrival
         if traveled and self.game['distance_to_next_landmark'] <= 0:
             self._arrive_at_landmark()
@@ -668,7 +503,7 @@ class ElvenExodusGUI:
         self._show_travel_buttons()
 
     def _arrive_at_landmark(self):
-        """Handle arriving at a new landmark. (Bug 12)"""
+        """Handle arriving at a new landmark."""
         lm_key = self.game['current_landmark']
         lm = self.landmarks['landmarks'][lm_key]
 
@@ -680,7 +515,7 @@ class ElvenExodusGUI:
         next_lm = self.landmarks['landmarks'][next_key]
 
         self.game['current_landmark'] = next_key
-        self.game['distance_to_next_landmark'] = next_lm['distance_to_next']
+        self.game['route_event_bonus'] = 0.0  # reset on arrival
 
         self.clear_buttons()
         self.write_text("")
@@ -688,15 +523,265 @@ class ElvenExodusGUI:
         self.write_text(f"ARRIVED: {next_lm['name']}".center(60), '#4ec9b0')
         self.write_text("=" * 60, '#4ec9b0')
         self.write_text(next_lm['description'], '#dcdcaa')
-        if not next_lm.get('is_final'):
-            self.write_text(f"Next leg: {next_lm['distance_to_next']} leagues ahead.", '#6a9955')
-
         self.update_status()
 
         if next_lm.get('is_final'):
             self._show_victory()
+        elif next_lm.get('routes'):
+            self._show_route_choice(next_key, next_lm)
         else:
+            self.game['distance_to_next_landmark'] = next_lm.get('distance_to_next', 0)
+            self.add_button("OPEN MERCHANT", self.open_landmark_shop, '#d7ba7d')
             self.add_button("CONTINUE", self.start_journey, '#0e639c')
+
+    def _show_route_choice(self, lm_key, lm):
+        """Display route options for the next leg of the journey."""
+        self.write_text("")
+        self.write_text("CHOOSE YOUR ROUTE FORWARD", '#ff9800')
+        self.write_text("─" * 60, '#ff9800')
+        for route in lm['routes']:
+            notes = []
+            if route.get('gold_cost'):
+                notes.append(f"Toll: {route['gold_cost']} gold")
+            if route.get('food_bonus'):
+                notes.append(f"+{route['food_bonus']} food")
+            bonus = route.get('event_bonus', 0)
+            if bonus > 0:
+                notes.append(f"more events (+{int(bonus*100)}%)")
+            elif bonus < 0:
+                notes.append(f"fewer events ({int(bonus*100)}%)")
+            note_str = f"  [{', '.join(notes)}]" if notes else ""
+            self.write_text(
+                f"{route['name']} — {route['distance']} leagues{note_str}", '#dcdcaa')
+            self.write_text(f"  {route['description']}", '#6a9955')
+            self.write_text("")
+
+        self.clear_buttons()
+        for route in lm['routes']:
+            can_afford = self.game['resources']['gold'] >= route.get('gold_cost', 0)
+            color = '#0e639c' if can_afford else '#555555'
+            self.add_button(route['name'],
+                            (lambda r=route: self._apply_route(r, lm_key)) if can_afford else lambda: None,
+                            color)
+
+    def _apply_route(self, route, lm_key):
+        """Apply the chosen route: set distance, event bonus, one-time effects."""
+        gold_cost = route.get('gold_cost', 0)
+        if gold_cost > 0:
+            self.game['resources']['gold'] -= gold_cost
+            self.write_text(f"Paid {gold_cost} gold toll.", '#f48771')
+        food_bonus = route.get('food_bonus', 0)
+        if food_bonus > 0:
+            self.game['resources']['food'] += food_bonus
+            self.write_text(f"+{food_bonus} food from passing caravans.", '#4ec9b0')
+
+        self.game['distance_to_next_landmark'] = route['distance']
+        self.game['route_event_bonus'] = route.get('event_bonus', 0.0)
+        self.write_text(f"Route chosen: {route['name']} ({route['distance']} leagues).", '#569cd6')
+
+        self.update_status()
+        self.clear_buttons()
+        lm = self.landmarks['landmarks'][lm_key]
+        if lm.get('shop_items'):
+            self.add_button("OPEN MERCHANT", self.open_landmark_shop, '#d7ba7d')
+        self.add_button("CONTINUE", self.start_journey, '#0e639c')
+
+    def open_landmark_shop(self):
+        """Open the landmark merchant shop with both buy and sell sections."""
+        lm_key = self.game.get('current_landmark', 'cursed_forest')
+        lm = self.landmarks['landmarks'][lm_key]
+
+        # Filter items available at this landmark
+        supply_ids = lm.get('shop_items', list(self.items['basic_supplies'].keys()))
+        special_ids = lm.get('shop_specials', [])
+        available_supplies = {k: v for k, v in self.items['basic_supplies'].items() if k in supply_ids}
+
+        shop = tk.Toplevel(self.root)
+        shop.title(f"Merchant — {lm['name']}")
+        shop.geometry("680x600")
+        shop.configure(bg='#2b2b2b')
+        shop.transient(self.root)
+        shop.grab_set()  # modal — blocks main window until closed
+
+        # Each landmark merchant can only be visited once per stop
+        if self.game.get('shop_used_at') == lm_key:
+            tk.Label(shop, text="The merchant has already packed up and moved on.",
+                     font=('Arial', 12), bg='#2b2b2b', fg='#f48771').pack(pady=30)
+            tk.Button(shop, text="CLOSE", command=shop.destroy,
+                      font=('Arial', 11), bg='#555555', fg='white',
+                      padx=12, pady=6).pack()
+            return
+
+        tk.Label(shop, text=f"MERCHANT — {lm['name'].upper()}",
+                 font=('Arial', 14, 'bold'), bg='#2b2b2b', fg='#d7ba7d').pack(pady=8)
+
+        gold_label = tk.Label(shop, text=f"Gold: {self.game['resources']['gold']}",
+                              font=('Arial', 12, 'bold'), bg='#2b2b2b', fg='#d7ba7d')
+        gold_label.pack()
+
+        # Pack buttons BEFORE canvas so expand=True doesn't crowd them out
+        btn_frame = tk.Frame(shop, bg='#2b2b2b')
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=8)
+
+        canvas = tk.Canvas(shop, bg='#2b2b2b')
+        scrollbar = tk.Scrollbar(shop, orient="vertical", command=canvas.yview)
+        content = tk.Frame(canvas, bg='#2b2b2b')
+        content.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=content, anchor="nw", width=640)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True, padx=(10, 0), pady=5)
+        scrollbar.pack(side="right", fill="y", pady=5)
+
+        # sell price per unit — food is not sellable (prevents hunt→sell exploit)
+        SELL_RATES = {'arrows': 0.2, 'medicine': 1.5}
+        SELL_LABELS = {'arrows': '0.2 gold/unit', 'medicine': '1.5 gold/unit'}
+        sell_vars = {}
+        buy_vars = {}
+        special_item_vars = {}
+
+        def safe_get_lm(v):
+            try:
+                return max(0, int(v.get()))
+            except Exception:
+                return 0
+
+        def update_net(*_):
+            sell_gold = sum(int(safe_get_lm(var) * SELL_RATES[res]) for res, var in sell_vars.items())
+            buy_cost = sum(safe_get_lm(var) * int(self.items['basic_supplies'][iid]['cost'] * (1 - discount))
+                           for iid, var in buy_vars.items())
+            buy_cost += sum(int(self.items['special_items'][iid]['cost'] * (1 - discount))
+                            for iid, var in special_item_vars.items() if var.get())
+            net = sell_gold - buy_cost
+            sign = '+' if net >= 0 else ''
+            gold_label.config(
+                text=f"Gold: {self.game['resources']['gold']}  (transaction: {sign}{net})"
+            )
+
+        # ── SELL SECTION ──
+        tk.Label(content, text="── SELL SUPPLIES ──", font=('Arial', 11, 'bold'),
+                 bg='#2b2b2b', fg='#ce9178').pack(pady=(8, 2), anchor=tk.W, padx=10)
+
+        for res in ('arrows', 'medicine'):
+            current = self.game['resources'].get(res, 0)
+            row = tk.Frame(content, bg='#1e1e1e', relief=tk.RAISED, bd=1)
+            row.pack(fill=tk.X, padx=10, pady=2)
+            tk.Label(row,
+                     text=f"{res.capitalize()}: {current} available  ({SELL_LABELS[res]})",
+                     font=('Arial', 10), bg='#1e1e1e', fg='#d4d4d4').pack(side=tk.LEFT, padx=10, pady=5)
+            var = tk.IntVar(value=0)
+            sell_vars[res] = var
+            tk.Label(row, text="Sell qty:", font=('Arial', 9),
+                     bg='#1e1e1e', fg='#6a9955').pack(side=tk.RIGHT, padx=(0, 4))
+            tk.Entry(row, textvariable=var, width=6, font=('Arial', 10),
+                     bg='#2b2b2b', fg='#d4d4d4').pack(side=tk.RIGHT, padx=(0, 10))
+            var.trace_add('write', update_net)
+
+        # ── BUY SECTION ──
+        tk.Label(content, text="── BUY SUPPLIES ──", font=('Arial', 11, 'bold'),
+                 bg='#2b2b2b', fg='#4ec9b0').pack(pady=(12, 2), anchor=tk.W, padx=10)
+
+        stats = calculate_stats(self.game, self.items, self.elders)
+        discount = stats.get('merchant_discount', 0.0)
+
+        if not available_supplies:
+            tk.Label(content, text="No supplies available here.",
+                     font=('Arial', 10), bg='#2b2b2b', fg='#6a9955').pack(padx=10, pady=4)
+
+        for item_id, item in available_supplies.items():
+            var = tk.IntVar(value=0)
+            buy_vars[item_id] = var
+            discounted = int(item['cost'] * (1 - discount))
+            price_text = (f"{discounted} gold (was {item['cost']})"
+                          if discount > 0 else f"{item['cost']} gold")
+            row = tk.Frame(content, bg='#1e1e1e', relief=tk.RAISED, bd=1)
+            row.pack(fill=tk.X, padx=10, pady=2)
+            tk.Label(row, text=f"{item['name']} — {price_text}",
+                     font=('Arial', 10, 'bold'), bg='#1e1e1e', fg='#dcdcaa').pack(anchor=tk.W, padx=10, pady=(4, 0))
+            tk.Label(row, text=item['description'],
+                     font=('Arial', 9), bg='#1e1e1e', fg='#569cd6').pack(anchor=tk.W, padx=10, pady=(0, 4))
+            tk.Entry(row, textvariable=var, width=5, font=('Arial', 10),
+                     bg='#2b2b2b', fg='#d4d4d4').pack(side=tk.RIGHT, padx=10)
+            var.trace_add('write', update_net)
+
+        # ── SPECIAL ITEMS ──
+        available_specials = {iid: item for iid, item in self.items['special_items'].items()
+                              if iid not in self.game['special_items'] and iid in special_ids}
+        if available_specials:
+            tk.Label(content, text="── SPECIAL ITEMS (one-time) ──", font=('Arial', 11, 'bold'),
+                     bg='#2b2b2b', fg='#b267e6').pack(pady=(12, 2), anchor=tk.W, padx=10)
+
+        special_item_vars = {}
+        for item_id, item in available_specials.items():
+            discounted = int(item['cost'] * (1 - discount))
+            price_text = (f"{discounted} gold (was {item['cost']})"
+                          if discount > 0 else f"{item['cost']} gold")
+            var = tk.BooleanVar(value=False)
+            special_item_vars[item_id] = var
+            row = tk.Frame(content, bg='#1e1e1e', relief=tk.RAISED, bd=1)
+            row.pack(fill=tk.X, padx=10, pady=2)
+            tk.Label(row, text=f"{item['name']} — {price_text}",
+                     font=('Arial', 10, 'bold'), bg='#1e1e1e', fg='#b267e6').pack(anchor=tk.W, padx=10, pady=(4, 0))
+            tk.Label(row, text=item['description'],
+                     font=('Arial', 9), bg='#1e1e1e', fg='#569cd6').pack(anchor=tk.W, padx=10, pady=(0, 4))
+            tk.Checkbutton(row, variable=var, command=update_net,
+                           bg='#1e1e1e', selectcolor='#2b2b2b',
+                           activebackground='#1e1e1e').pack(side=tk.RIGHT, padx=10)
+            var.trace_add('write', update_net)
+
+        def execute():
+            # Validate sell quantities
+            for res, var in sell_vars.items():
+                qty = safe_get_lm(var)
+                if qty > self.game['resources'].get(res, 0):
+                    messagebox.showerror("Invalid Sale",
+                        f"You only have {self.game['resources'].get(res, 0)} {res} to sell.")
+                    return
+
+            sell_gold = sum(int(safe_get_lm(var) * SELL_RATES[res]) for res, var in sell_vars.items())
+            buy_cost = sum(safe_get_lm(var) * int(self.items['basic_supplies'][iid]['cost'] * (1 - discount))
+                           for iid, var in buy_vars.items())
+            buy_cost += sum(int(self.items['special_items'][iid]['cost'] * (1 - discount))
+                            for iid, var in special_item_vars.items() if var.get())
+
+            if self.game['resources']['gold'] + sell_gold < buy_cost:
+                messagebox.showerror("Not Enough Gold",
+                    f"You need {buy_cost} gold but only have "
+                    f"{self.game['resources']['gold'] + sell_gold} (including sale proceeds).")
+                return
+
+            # Apply sells
+            for res, var in sell_vars.items():
+                qty = safe_get_lm(var)
+                if qty > 0:
+                    self.game['resources'][res] -= qty
+                    self.game['resources']['gold'] += int(qty * SELL_RATES[res])
+
+            # Apply basic supply buys
+            for item_id, var in buy_vars.items():
+                qty = safe_get_lm(var)
+                if qty > 0:
+                    item = self.items['basic_supplies'][item_id]
+                    discounted_cost = int(item['cost'] * (1 - discount))
+                    self.game['resources'][item['resource']] += item['amount'] * qty
+                    self.game['resources']['gold'] -= discounted_cost * qty
+
+            # Apply special item purchases
+            for item_id, var in special_item_vars.items():
+                if var.get() and item_id not in self.game['special_items']:
+                    self.game['special_items'].append(item_id)
+                    self.game['resources']['gold'] -= int(self.items['special_items'][item_id]['cost'] * (1 - discount))
+
+            self.game['shop_used_at'] = lm_key
+            shop.destroy()
+            self.update_status()
+            self.write_text("Transaction complete.", '#d7ba7d')
+
+        tk.Button(btn_frame, text="EXECUTE TRANSACTION", command=execute,
+                  font=('Arial', 11, 'bold'), bg='#0e639c', fg='white',
+                  padx=12, pady=6).pack(side=tk.LEFT, padx=5)
+        tk.Button(btn_frame, text="CLOSE", command=shop.destroy,
+                  font=('Arial', 11), bg='#555555', fg='white',
+                  padx=12, pady=6).pack(side=tk.LEFT, padx=5)
 
     def _show_victory(self):
         """Show the victory screen."""
@@ -756,10 +841,28 @@ class ElvenExodusGUI:
         affected_by = effects.get('affected_by')
         stat_mult = stats.get(affected_by, 1.0) if affected_by else 1.0
 
+        # Arcane Veil: pop the flag now and halve all negative effects this event
+        veil_active = self.game.pop('arcane_veil_active', False)
+        veil_triggered = False
+
         for key, value in effects.items():
-            if key in ('trigger', 'affected_by', 'success_chance',
+            if key in ('affected_by', 'success_chance',
                        'random_blessing', 'enemy_strength', 'morale'):
                 continue
+
+            # Combat trigger — losses reduced by combat_power (and veil)
+            if key == 'trigger':
+                if value == 'combat':
+                    enemy_str = effects.get('enemy_strength', [20, 40])
+                    raw = random.randint(min(enemy_str), max(enemy_str))
+                    losses = max(1, int(raw / stats.get('combat_power', 1.0)))
+                    if veil_active:
+                        losses = max(1, losses // 2)
+                        veil_triggered = True
+                    losses = min(losses, self.game['total_followers'])
+                    self.game['total_followers'] -= losses
+                    self.write_text(f"  Combat! {losses} followers lost in the fight.", '#f48771')
+                continue  # skip all other triggers (trade_menu etc.)
 
             if key == 'day':
                 self.game['day'] += value
@@ -775,7 +878,19 @@ class ElvenExodusGUI:
                 change = value
 
             if affected_by:
-                change = int(change * stat_mult)
+                if change < 0:
+                    # Mitigation stats (disease_resistance, weather_resistance):
+                    # higher stat = less damage. Base=0 means full damage.
+                    change = int(change / (1 + stat_mult))
+                else:
+                    # Enhancement stats (hunting_efficiency, healing_power):
+                    # higher stat = more gain.
+                    change = int(change * stat_mult)
+
+            # Arcane Veil halves all negative changes
+            if veil_active and change < 0:
+                change = -(abs(change) // 2)
+                veil_triggered = True
 
             sign = '+' if change >= 0 else ''
             if key == 'followers':
@@ -785,6 +900,9 @@ class ElvenExodusGUI:
                 self.game['resources'][key] = max(0, self.game['resources'][key] + change)
                 self.write_text(f"  {key.capitalize()}: {sign}{change}", '#dcdcaa')
 
+        if veil_triggered:
+            self.write_text("  (Arcane Veil absorbed half the damage!)", '#b267e6')
+
         self.update_status()
 
         if self.game['total_followers'] <= 0:
@@ -792,6 +910,59 @@ class ElvenExodusGUI:
             return
 
         on_done()
+
+    def cast_spell(self):
+        """Spend mana on an arcane effect (consumes a day)."""
+        self._consume_food()
+        if self.game['total_followers'] <= 0:
+            self.show_game_over("All followers have perished.")
+            return
+
+        mana = self.game['resources']['mana']
+        self.write_text("")
+        self.write_text("ARCANE ARTS", '#c586c0')
+
+        if mana <= 0:
+            self.write_text("No mana available. The day passes without magic.", '#c586c0')
+            self.finish_day(traveled=False)
+            return
+
+        self.write_text(f"Available mana: {mana}  — Choose a spell:", '#c586c0')
+        self.write_text("  Conjure Rations (3 mana)  — produce 20 food from thin air", '#dcdcaa')
+        self.write_text("  Healing Aura   (5 mana)  — restore 5% of lost followers", '#4ec9b0')
+        self.write_text("  Arcane Veil    (8 mana)  — halve the next event's damage", '#b267e6')
+
+        self.clear_buttons()
+        if mana >= 3:
+            self.add_button("CONJURE RATIONS", lambda: self._apply_spell(3, 'rations'), '#c586c0')
+        if mana >= 5:
+            self.add_button("HEALING AURA", lambda: self._apply_spell(5, 'heal'), '#4ec9b0')
+        if mana >= 8:
+            self.add_button("ARCANE VEIL", lambda: self._apply_spell(8, 'veil'), '#b267e6')
+        self.add_button("CANCEL", lambda: self.finish_day(traveled=False), '#555555')
+
+    def _apply_spell(self, cost, spell):
+        """Apply the chosen spell effect."""
+        self.game['resources']['mana'] -= cost
+        stats = calculate_stats(self.game, self.items, self.elders)
+
+        if spell == 'rations':
+            # Base 20 food + 5 per point of mana_generation (Miriel adds 3 → +15 bonus)
+            gained = 20 + int(stats.get('mana_generation', 0) * 5)
+            self.game['resources']['food'] += gained
+            self.write_text(f"Conjured rations! +{gained} food. (-{cost} mana)", '#c586c0')
+        elif spell == 'heal':
+            missing = self.game['max_followers'] - self.game['total_followers']
+            recovered = min(missing, max(1, int(self.game['max_followers'] * 0.05
+                                               * stats.get('healing_power', 1.0))))
+            self.game['total_followers'] += recovered
+            self.write_text(f"Healing aura! +{recovered} followers. (-{cost} mana)", '#4ec9b0')
+        elif spell == 'veil':
+            self.game['arcane_veil_active'] = True
+            self.write_text(f"Arcane Veil raised. Next harmful event is halved. (-{cost} mana)", '#b267e6')
+
+        self.update_status()
+        self.finish_day(traveled=False)
 
     def rest(self):
         """Rest for a day: no travel, recover followers. (Bug 10)"""
@@ -822,13 +993,13 @@ class ElvenExodusGUI:
         stats = calculate_stats(self.game, self.items, self.elders)
         if self.game['resources']['arrows'] >= 10:
             self.game['resources']['arrows'] -= 10
-            gained = int(random.randint(20, 40) * stats['hunting_efficiency'])
+            gained = int(random.randint(40, 70) * stats['hunting_efficiency'])
             self.game['resources']['food'] += gained
             self.write_text(f"Hunt successful! +{gained} food (used 10 arrows).", '#4ec9b0')
         else:
-            gained = int(random.randint(5, 15) * stats['hunting_efficiency'])
+            gained = int(random.randint(5, 12) * stats['hunting_efficiency'])
             self.game['resources']['food'] += gained
-            self.write_text(f"Hunting without arrows yields less. +{gained} food.", '#d7ba7d')
+            self.write_text(f"Hunting without arrows yields little. +{gained} food.", '#d7ba7d')
 
         self.finish_day(traveled=False)
 
@@ -840,9 +1011,11 @@ class ElvenExodusGUI:
             return
 
         stats = calculate_stats(self.game, self.items, self.elders)
-        gained = int(random.randint(5, 15) * stats['hunting_efficiency'])
-        self.game['resources']['food'] += gained
-        self.write_text(f"You find edible plants and herbs. +{gained} food.", '#4ec9b0')
+        medicine_gained = int(random.randint(3, 8) * stats['healing_power'])
+        food_gained = random.randint(2, 6)
+        self.game['resources']['medicine'] += medicine_gained
+        self.game['resources']['food'] += food_gained
+        self.write_text(f"Found herbs and plants. +{medicine_gained} medicine, +{food_gained} food.", '#4ec9b0')
 
         self.finish_day(traveled=False)
 

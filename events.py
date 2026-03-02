@@ -70,7 +70,11 @@ def _apply_effects(game, outcome, stats):
 
         # Bug 8: use min/max to handle inverted negative ranges like [-10, -20]
         change = random.randint(min(value[0], value[1]), max(value[0], value[1])) if isinstance(value, list) else value
-        change = int(change * stat_multiplier) if affected_by else change
+        if affected_by:
+            if change < 0:
+                change = int(change / (1 + stat_multiplier))  # mitigation: higher stat = less damage
+            else:
+                change = int(change * stat_multiplier)        # enhancement: higher stat = more gain
 
         if key == 'followers':
             game['total_followers'] = max(0, game['total_followers'] + change)

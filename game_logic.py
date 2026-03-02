@@ -67,12 +67,12 @@ def select_elders(game, elders_data):
     game['elders'] = chosen
     game['total_followers'] = sum(e['followers'] for e in chosen)
     game['max_followers'] = game['total_followers']
-    
-    # Apply Aldric's bonus gold
-    for elder in chosen:
-        if elder['id'] == 'aldric':
-            game['resources']['gold'] += 200
-            print(f"\n💰 {elder['name']}'s Trade Network grants +200 gold!")
+
+    # Gold = 100 base + each elder's starting_gold
+    game['resources']['gold'] = 100 + sum(
+        elders_data['elders'][e['id']]['starting_gold'] for e in chosen
+    )
+    print(f"\n💰 Starting gold: {game['resources']['gold']}")
     
     # Summary
     print("\n" + "═"*60)
@@ -98,8 +98,8 @@ def daily_turn(game, stats, events_data):
     print(f"\n🚶 Traveled {distance} leagues")
     
     # Food consumption
-    food_needed = game['total_followers'] // 10  # 1 food per 10 followers
-    # Bug 6: food_efficiency > 1.0 means more efficient (less consumed). Division is correct.
+    food_needed = game['total_followers'] // 7   # 1 food per 7 followers
+    # food_efficiency > 1.0 means more efficient (less consumed). Division is correct.
     food_consumed = max(1, int(food_needed / stats['food_efficiency']))
     game['resources']['food'] -= food_consumed
     print(f"🍖 Consumed {food_consumed} food")
@@ -108,7 +108,7 @@ def daily_turn(game, stats, events_data):
     if game['resources']['food'] < 0:
         game['resources']['food'] = 0
         game['days_without_food'] = game.get('days_without_food', 0) + 1
-        pct = 0.01 * game['days_without_food']  # 1% per consecutive starving day
+        pct = 0.02 * game['days_without_food']  # 2% per consecutive starving day
         deaths = max(1, int(game['total_followers'] * pct))
         deaths = min(deaths, game['total_followers'])
         game['total_followers'] -= deaths

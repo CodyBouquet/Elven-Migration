@@ -2,55 +2,116 @@
   "landmarks": {
     "cursed_forest": {
       "name": "Cursed Forest",
-      "description": "Your dying homeland. The trees wither and darkness spreads.",
+      "description": "Your dying homeland. The trees wither and darkness spreads from the heart of the forest.",
       "distance_to_next": 200,
-      "next_landmark": "borderlands"
+      "next_landmark": "borderlands",
+      "shop_items": ["food_small", "food_medium", "food_large", "medicine_small", "medicine_medium", "medicine_large", "arrows_small", "arrows_medium"],
+      "shop_specials": ["hunting_bow", "healers_kit", "lucky_charm", "sturdy_boots"]
     },
     "borderlands": {
       "name": "The Borderlands",
-      "description": "Lawless territory between elven and human lands. Bandits roam freely.",
-      "distance_to_next": 300,
+      "description": "Lawless territory between elven and human lands. Makeshift camps and desperate traders dot the road.",
       "next_landmark": "human_kingdom",
-      "route_choice": {
-        "route_a": {
+      "routes": [
+        {
+          "id": "main_road",
           "name": "Main Road",
-          "description": "Well-traveled but heavily patrolled by bandits",
-          "difficulty": "medium",
+          "description": "Direct and fast, but bandit gangs patrol every mile looking for easy marks.",
           "distance": 300,
-          "events": ["bandit_ambush", "friendly_traders"]
+          "event_bonus": 0.15
         },
-        "route_b": {
+        {
+          "id": "forest_path",
           "name": "Forest Path",
-          "description": "Safer but longer and harder to find food",
-          "difficulty": "hard",
-          "distance": 350,
-          "events": ["good_hunting", "harsh_storm"]
+          "description": "A longer route through dense woodland. Fewer ambushes, but food is scarce and the terrain punishing.",
+          "distance": 380,
+          "event_bonus": -0.10
         }
-      }
+      ],
+      "shop_items": ["food_small", "food_medium", "arrows_small", "arrows_medium"],
+      "shop_specials": []
     },
     "human_kingdom": {
       "name": "Kingdom of Arathor",
-      "description": "Human lands. They are suspicious of elven refugees.",
-      "distance_to_next": 400,
+      "description": "Human lands. The people are suspicious of elven refugees, but gold speaks louder than prejudice.",
       "next_landmark": "mountain_pass",
-      "special_event": "border_checkpoint"
+      "routes": [
+        {
+          "id": "kings_highway",
+          "name": "King's Highway",
+          "description": "Fast and well-maintained, but royal toll collectors demand payment at every checkpoint.",
+          "distance": 400,
+          "event_bonus": -0.05,
+          "gold_cost": 40
+        },
+        {
+          "id": "back_roads",
+          "name": "Back Roads",
+          "description": "Winding rural paths through farmlands and villages. No tolls, but longer and unpredictable.",
+          "distance": 490,
+          "event_bonus": 0.10
+        },
+        {
+          "id": "merchant_road",
+          "name": "Merchant Road",
+          "description": "A busy trade route. Somewhat longer, but passing caravans stock you with extra provisions.",
+          "distance": 450,
+          "event_bonus": 0.05,
+          "food_bonus": 30
+        }
+      ],
+      "shop_items": ["food_small", "food_medium", "food_large", "medicine_small", "medicine_medium"],
+      "shop_specials": ["lucky_charm", "healers_kit"]
     },
     "mountain_pass": {
       "name": "Frostpeak Pass",
-      "description": "Treacherous mountain crossing. The air is thin and cold.",
-      "distance_to_next": 350,
-      "next_landmark": "ancient_ruins"
+      "description": "Treacherous mountain crossing. The air is thin, the cold is deadly, and the storms are relentless.",
+      "next_landmark": "ancient_ruins",
+      "routes": [
+        {
+          "id": "summit_pass",
+          "name": "Summit Pass",
+          "description": "The direct high-altitude route. Faster, but blizzards and thin air punish the unprepared.",
+          "distance": 350,
+          "event_bonus": 0.20
+        },
+        {
+          "id": "valley_route",
+          "name": "Valley Route",
+          "description": "A sheltered path winding through mountain valleys. Much longer but far safer from storms.",
+          "distance": 460,
+          "event_bonus": -0.10
+        }
+      ],
+      "shop_items": ["food_small", "food_medium", "medicine_small", "medicine_medium", "arrows_small"],
+      "shop_specials": []
     },
     "ancient_ruins": {
       "name": "Ruins of Kal'Thalas",
-      "description": "Once a great elven city, now abandoned for centuries.",
-      "distance_to_next": 250,
+      "description": "Once a great elven city, now abandoned for centuries. The old magic still lingers in the stones.",
       "next_landmark": "silverwood_vale",
-      "special_event": "ancient_treasure"
+      "routes": [
+        {
+          "id": "through_ruins",
+          "name": "Through the Ruins",
+          "description": "Cut directly through the ancient city streets. Faster, but the ruins hide unknown dangers.",
+          "distance": 250,
+          "event_bonus": 0.15
+        },
+        {
+          "id": "outer_path",
+          "name": "Outer Path",
+          "description": "Circle around the ruins on open ground. Adds days to the journey but avoids the dark interior.",
+          "distance": 320,
+          "event_bonus": -0.05
+        }
+      ],
+      "shop_items": ["medicine_small", "medicine_medium", "medicine_large", "arrows_medium", "food_small"],
+      "shop_specials": ["hunting_bow", "healers_kit", "sturdy_boots"]
     },
     "silverwood_vale": {
       "name": "Silverwood Vale",
-      "description": "Your destination. A hidden valley where the old magic still thrives.",
+      "description": "Your destination. A hidden valley where the old magic still thrives and your people can live in peace.",
       "distance_to_next": 0,
       "is_final": true
     }
