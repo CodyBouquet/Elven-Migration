@@ -8,8 +8,8 @@ import tkinter as tk
 from tkinter import messagebox
 import json
 
-# Import game logic from game.py
-from game import calculate_stats
+# Import game logic from stats.py
+from stats import calculate_stats
 
 
 # ═══════════════════════════════════════════════════════
@@ -37,6 +37,7 @@ class ElvenExodusGUI:
         self.elders = load_json('elders.json')
         self.items = load_json('items.json')
         self.events = load_json('events.json')
+        self.landmarks = load_json('landmarks.json')  # Bug 12
 
         # Game state
         self.game = None
@@ -167,12 +168,15 @@ class ElvenExodusGUI:
     def update_status(self):
         """Update the status bar"""
         if self.game:
+            lm_key = self.game.get('current_landmark', '')
+            lm = self.landmarks['landmarks'].get(lm_key, {})
+            lm_name = lm.get('name', 'Unknown')
             status = (
                 f"Day {self.game['day']}  |  "
                 f"Followers: {self.game['total_followers']}/{self.game['max_followers']}  |  "
                 f"Food: {self.game['resources']['food']}  |  "
                 f"Gold: {self.game['resources']['gold']}  |  "
-                f"Distance: {self.game['distance_to_next_landmark']} leagues"
+                f"{lm_name}: {self.game['distance_to_next_landmark']} leagues to next"
             )
             self.status_label.config(text=status)
     
@@ -199,6 +203,7 @@ class ElvenExodusGUI:
         self.write_text("")
         
         self.add_button("BEGIN", self.select_elders, '#0e639c')
+        self.add_button("LOAD GAME", self.show_load_screen, '#4ec9b0')
         self.add_button("QUIT", self.root.quit, '#f48771')
 
     def select_elders(self):
@@ -323,24 +328,48 @@ class ElvenExodusGUI:
             messagebox.showerror("Invalid Selection", "You must select exactly 4 elders!")
             return
         
+        # Build elder objects with perk data from loaded JSON
+        elders_list = []
+        for eid in selected:
+            elder_data = self.elders['elders'][eid]
+            elders_list.append({
+                'id': eid,
+                'name': elder_data['name'],
+                'title': elder_data['title'],
+                'followers': elder_data['followers'],
+                'perk': elder_data['perk']
+            })
+
+        total_followers = sum(e['followers'] for e in elders_list)
+
+        # Bug 12: start at first landmark with its segment distance
+        first_lm = self.landmarks['landmarks']['cursed_forest']
+
         # Initialize game state
         self.game = {
             'day': 1,
-            'total_followers': 500,
-            'max_followers': 500,
-            'selected_elders': selected,
+            'total_followers': total_followers,
+            'max_followers': total_followers,
+            'elders': elders_list,
+            'current_landmark': 'cursed_forest',
             'resources': {
                 'food': 0,
-                'gold': 2500,
+                'gold': 500,
                 'medicine': 0,
                 'arrows': 0,
                 'mana': 0
             },
             'special_items': [],
-            'distance_to_next_landmark': 1600,
+            'distance_to_next_landmark': first_lm['distance_to_next'],
             'total_distance_traveled': 0,
-            'events_encountered': []
+            'days_without_food': 0,
+            'game_over': False,
         }
+
+        # Apply Aldric's Trade Network bonus (+200 gold)
+        for elder in elders_list:
+            if elder['id'] == 'aldric':
+                self.game['resources']['gold'] += 200
         
         self.elder_window.destroy()
         self.update_status()
@@ -523,135 +552,385 @@ class ElvenExodusGUI:
 
     def purchase_items(self, shop, item_vars, special_item_vars):
         """Process the purchase of items"""
-        total_cost = sum(var.get() * self.items['basic_supplies'][item_id]['cost'] 
+        total_cost = sum(var.get() * self.items['basic_supplies'][item_id]['cost']
                         for item_id, var in item_vars.items())
-        
-        special_cost = sum(var.get() * self.items['special_items'][item_id]['cost'] 
-                        for item_id, var in special_item_vars.items())
+        special_cost = sum(var.get() * self.items['special_items'][item_id]['cost']
+                          for item_id, var in special_item_vars.items())
         total_cost += special_cost
 
-        shop.destroy()
+        if total_cost > self.game['resources']['gold']:
+            messagebox.showerror("Not Enough Gold",
+                                 f"You need {total_cost} gold but only have "
+                                 f"{self.game['resources']['gold']}.")
+            return
 
+        # Deduct gold
+        self.game['resources']['gold'] -= total_cost
+
+        # Add basic supply resources
+        for item_id, var in item_vars.items():
+            qty = var.get()
+            if qty > 0:
+                item = self.items['basic_supplies'][item_id]
+                self.game['resources'][item['resource']] += item['amount'] * qty
+
+        # Add special items (checkbox = 1 means purchased)
+        for item_id, var in special_item_vars.items():
+            if var.get() == 1 and item_id not in self.game['special_items']:
+                self.game['special_items'].append(item_id)
+
+        shop.destroy()
+        self.update_status()
         self.start_journey()
     
     def start_journey(self):
-        """Start the journey"""
+        """Start or resume the journey screen"""
         self.clear_text()
         self.clear_buttons()
-        
+
+        lm_key = self.game.get('current_landmark', 'cursed_forest')
+        lm = self.landmarks['landmarks'][lm_key]
+
         self.write_text("=" * 60, '#4ec9b0')
-        self.write_text("BEGINNING YOUR JOURNEY".center(60), '#4ec9b0')
+        self.write_text("ELVEN EXODUS".center(60), '#4ec9b0')
         self.write_text("=" * 60, '#4ec9b0')
         self.write_text("")
-        self.write_text("Your journey has begun! Each day you will travel and", '#dcdcaa')
-        self.write_text("face challenges along the way.", '#dcdcaa')
-        
+        self.write_text(f"Current region: {lm['name']}", '#569cd6')
+        self.write_text(lm['description'], '#dcdcaa')
+        self.write_text("")
+
+        self._show_travel_buttons()
+
+    def _show_travel_buttons(self):
+        """Restore the main travel action buttons"""
+        self.clear_buttons()
         self.add_button("TRAVEL", self.advance_day, '#0e639c')
         self.add_button("REST", self.rest, '#4ec9b0')
         self.add_button("HUNT", self.hunt, '#4ec9b0')
         self.add_button("FORAGE", self.forage, '#4ec9b0')
+        self.add_button("SAVE", self.show_save_screen, '#b267e6')
 
-    def advance_day(self):
-        """Advance the game by one day"""
-        
-        # **Food Consumption Logic**
-        food_consumed = self.game['total_followers'] * 2  # Example: each follower consumes 2 units of food
+    def _consume_food(self):
+        """Consume food for the day and apply starvation. (Bugs 5 & 11)"""
+        stats = calculate_stats(self.game, self.items, self.elders)
+        # Bug 11: align with game_logic.py — 1 food per 10 followers
+        # food_efficiency > 1.0 means more efficient (less consumed); division is correct
+        food_needed = self.game['total_followers'] // 10
+        food_consumed = max(1, int(food_needed / stats['food_efficiency']))
         self.game['resources']['food'] -= food_consumed
+        self.write_text(f"Consumed {food_consumed} food.", '#6a9955')
 
         if self.game['resources']['food'] < 0:
-            self.game['days_without_food'] += 1  # Increment days without food
-            food_shortage = abs(self.game['resources']['food'])  # Calculate how much food is missing
-            
-            # Calculate deaths based on days without food
-            if self.game['days_without_food'] == 2:
-                deaths = min(random.randint(1, 50), self.game['total_followers'])
-                self.game['total_followers'] -= deaths
-                self.write_text(f"💀 {deaths} followers died from starvation!", '#f48771')
-            elif self.game['days_without_food'] > 2:
-                deaths = min(random.randint(50, 100), self.game['total_followers'])  # Increase risk of death over time
-                self.game['total_followers'] -= deaths
-                self.write_text(f"💀 {deaths} followers died from starvation!", '#f48771')
-            
-            self.game['resources']['food'] = 0  # Set food to 0
-
+            self.game['resources']['food'] = 0
+            self.game['days_without_food'] += 1
+            # Bug 5: escalating 1%-per-day percentage instead of abs(food)*2
+            pct = 0.01 * self.game['days_without_food']
+            deaths = max(1, int(self.game['total_followers'] * pct))
+            deaths = min(deaths, self.game['total_followers'])
+            self.game['total_followers'] -= deaths
+            self.write_text(
+                f"No food! {deaths} followers starved. "
+                f"(Day {self.game['days_without_food']} without food)", '#f48771')
         else:
-            self.game['days_without_food'] = 0  # Reset if food is available
+            self.game['days_without_food'] = 0
 
-        # **Check for Events**
-        self.check_events()
+    def advance_day(self):
+        """Advance the game by one travel day."""
+        self._consume_food()
+        if self.game['total_followers'] <= 0:
+            self.show_game_over("All followers have perished.")
+            return
 
-        # **Increment Distance Traveled**
-        distance_per_day = 10  # Example: distance traveled each day
-        self.game['total_distance_traveled'] += distance_per_day
-        self.game['distance_to_next_landmark'] -= distance_per_day
-
-        if self.game['distance_to_next_landmark'] < 0:
-            self.game['distance_to_next_landmark'] = 0  # Prevent negative distance
-
-        # **Increment Day Count**
-        self.game['day'] += 1
-        self.update_status()
-    
-    def check_events(self):
-        """Randomly encounter events during travel"""
-        if random.random() < 0.2:  # 20% chance of an event
-            self.resolve_event()
+        if random.random() < 0.2:
+            # Bug 7: show buttons for player choice; finish_day called after selection
+            self.resolve_event(on_done=lambda: self.finish_day(traveled=True))
         else:
             self.write_text("The day passes without incident.", '#d7ba7d')
-    
-    def resolve_event(self):
-        """Handle event resolution"""
+            self.finish_day(traveled=True)
+
+    def finish_day(self, traveled=False):
+        """Complete the day: advance distance if traveled, check landmarks, increment day."""
+        if traveled:
+            stats = calculate_stats(self.game, self.items, self.elders)
+            # Bug 11: use stats travel_speed (matches game_logic.py)
+            distance = int(stats['travel_speed'])
+            self.game['total_distance_traveled'] += distance
+            self.game['distance_to_next_landmark'] -= distance
+
+        self.game['day'] += 1
+
+        # Bug 12: check landmark arrival
+        if traveled and self.game['distance_to_next_landmark'] <= 0:
+            self._arrive_at_landmark()
+            return
+
+        self.update_status()
+        self._show_travel_buttons()
+
+    def _arrive_at_landmark(self):
+        """Handle arriving at a new landmark. (Bug 12)"""
+        lm_key = self.game['current_landmark']
+        lm = self.landmarks['landmarks'][lm_key]
+
+        if lm.get('is_final'):
+            self._show_victory()
+            return
+
+        next_key = lm['next_landmark']
+        next_lm = self.landmarks['landmarks'][next_key]
+
+        self.game['current_landmark'] = next_key
+        self.game['distance_to_next_landmark'] = next_lm['distance_to_next']
+
+        self.clear_buttons()
+        self.write_text("")
+        self.write_text("=" * 60, '#4ec9b0')
+        self.write_text(f"ARRIVED: {next_lm['name']}".center(60), '#4ec9b0')
+        self.write_text("=" * 60, '#4ec9b0')
+        self.write_text(next_lm['description'], '#dcdcaa')
+        if not next_lm.get('is_final'):
+            self.write_text(f"Next leg: {next_lm['distance_to_next']} leagues ahead.", '#6a9955')
+
+        self.update_status()
+
+        if next_lm.get('is_final'):
+            self._show_victory()
+        else:
+            self.add_button("CONTINUE", self.start_journey, '#0e639c')
+
+    def _show_victory(self):
+        """Show the victory screen."""
+        lm = self.landmarks['landmarks'][self.game['current_landmark']]
+        self.clear_text()
+        self.clear_buttons()
+        self.write_text("=" * 60, '#4ec9b0')
+        self.write_text("VICTORY!".center(60), '#4ec9b0')
+        self.write_text("=" * 60, '#4ec9b0')
+        self.write_text(f"After {self.game['day']} days you reached {lm['name']}!", '#4ec9b0')
+        self.write_text(
+            f"{self.game['total_followers']} of {self.game['max_followers']} followers survived.",
+            '#dcdcaa')
+        self.write_text("")
+        self.add_button("RETURN TO MAIN MENU", self.show_intro, '#0e639c')
+
+    def resolve_event(self, on_done):
+        """Show event with outcome buttons; on_done() is called after the player chooses. (Bug 7)"""
         category = random.choice(['positive_events', 'negative_events', 'neutral_events'])
         event_key = random.choice(list(self.events[category].keys()))
         event = self.events[category][event_key]
 
-        self.write_text(f"EVENT: {event['description']}", '#ff9800')
+        self.write_text("")
+        self.write_text(f"EVENT: {event['title']}", '#ff9800')
+        self.write_text(event['description'], '#dcdcaa')
+        self.write_text("")
 
-        # Choose an outcome (for now, we'll just take the first one)
-        outcome = event['outcomes'][0]
-        self.write_text(f"You chose: {outcome['text']}", '#dcdcaa')
+        self.clear_buttons()
+        for outcome in event['outcomes']:
+            can_use = self._check_requirements(outcome.get('requirements', {}))
+            label = outcome['text']
+            if can_use:
+                self.add_button(label,
+                                lambda o=outcome: self.apply_event_outcome(o, on_done),
+                                '#0e639c')
+            else:
+                self.add_button(f"{label} [NO RESOURCES]", lambda: None, '#555555')
 
-        # Apply effects
+    def _check_requirements(self, req):
+        """Return True if the current game state satisfies a requirements dict."""
+        for res in ('food', 'medicine', 'gold', 'mana', 'arrows'):
+            if res in req and self.game['resources'].get(res, 0) < req[res]:
+                return False
+        if 'stat' in req:
+            stats = calculate_stats(self.game, self.items, self.elders)
+            if stats.get(req['stat'], 0) < req.get('min_value', 0):
+                return False
+        return True
+
+    def apply_event_outcome(self, outcome, on_done):
+        """Apply a chosen outcome's effects and continue. (Bugs 8 & 9)"""
+        self.write_text(f"> {outcome['text']}", '#4ec9b0')
+        self.write_text(outcome['outcome_description'], '#dcdcaa')
+
+        stats = calculate_stats(self.game, self.items, self.elders)
         effects = outcome.get('effects', {})
-        
-        # Apply follower changes
-        if 'followers' in effects:
-            follower_change = effects['followers']
-            change_value = random.randint(follower_change[0], follower_change[1])
-            self.game['total_followers'] += change_value
-            self.write_text(f"Followers changed by: {change_value}", '#dcdcaa')
+        affected_by = effects.get('affected_by')
+        stat_mult = stats.get(affected_by, 1.0) if affected_by else 1.0
 
-        # Apply food changes
-        if 'food' in effects:
-            food_change = effects['food']
-            change_value = random.randint(food_change[0], food_change[1])
-            self.game['resources']['food'] += change_value
-            self.write_text(f"Food changed by: {change_value}", '#dcdcaa')
+        for key, value in effects.items():
+            if key in ('trigger', 'affected_by', 'success_chance',
+                       'random_blessing', 'enemy_strength', 'morale'):
+                continue
 
-        # Apply other effects similarly...
+            if key == 'day':
+                self.game['day'] += value
+                self.write_text(f"  Lost {value} extra day(s).", '#f48771')
+                continue
+
+            # Bug 8: guard against inverted negative ranges like [-10, -20]
+            # Bug 9: handle scalar values (not every effect is a [min, max] list)
+            if isinstance(value, list):
+                lo, hi = min(value[0], value[1]), max(value[0], value[1])
+                change = random.randint(lo, hi)
+            else:
+                change = value
+
+            if affected_by:
+                change = int(change * stat_mult)
+
+            sign = '+' if change >= 0 else ''
+            if key == 'followers':
+                self.game['total_followers'] = max(0, self.game['total_followers'] + change)
+                self.write_text(f"  Followers: {sign}{change}", '#dcdcaa')
+            elif key in self.game['resources']:
+                self.game['resources'][key] = max(0, self.game['resources'][key] + change)
+                self.write_text(f"  {key.capitalize()}: {sign}{change}", '#dcdcaa')
+
+        self.update_status()
+
+        if self.game['total_followers'] <= 0:
+            self.show_game_over("All followers have perished.")
+            return
+
+        on_done()
 
     def rest(self):
-        """Placeholder for the rest function"""
-        self.write_text("You take a moment to rest and recover.", '#dcdcaa')
+        """Rest for a day: no travel, recover followers. (Bug 10)"""
+        self._consume_food()
+        if self.game['total_followers'] <= 0:
+            self.show_game_over("All followers have perished.")
+            return
+
+        stats = calculate_stats(self.game, self.items, self.elders)
+        # Recover 1% of max followers, scaled by healing_power, capped at missing count
+        missing = self.game['max_followers'] - self.game['total_followers']
+        recovered = min(missing, max(1, int(self.game['max_followers'] * 0.01 * stats['healing_power'])))
+        if recovered > 0:
+            self.game['total_followers'] += recovered
+            self.write_text(f"Your followers rest and recover. +{recovered} followers.", '#4ec9b0')
+        else:
+            self.write_text("Your followers rest. No further recovery possible.", '#d7ba7d')
+
+        self.finish_day(traveled=False)
 
     def hunt(self):
-        """Placeholder for the hunt function"""
-        self.write_text("You go hunting for food.", '#dcdcaa')
+        """Hunt for food using arrows; bare-hands if none. (Bug 10)"""
+        self._consume_food()
+        if self.game['total_followers'] <= 0:
+            self.show_game_over("All followers have perished.")
+            return
+
+        stats = calculate_stats(self.game, self.items, self.elders)
+        if self.game['resources']['arrows'] >= 10:
+            self.game['resources']['arrows'] -= 10
+            gained = int(random.randint(20, 40) * stats['hunting_efficiency'])
+            self.game['resources']['food'] += gained
+            self.write_text(f"Hunt successful! +{gained} food (used 10 arrows).", '#4ec9b0')
+        else:
+            gained = int(random.randint(5, 15) * stats['hunting_efficiency'])
+            self.game['resources']['food'] += gained
+            self.write_text(f"Hunting without arrows yields less. +{gained} food.", '#d7ba7d')
+
+        self.finish_day(traveled=False)
 
     def forage(self):
-        """Placeholder for the forage function"""
-        self.write_text("You search for edible plants and herbs.", '#dcdcaa')
+        """Forage for edible plants and herbs. (Bug 10)"""
+        self._consume_food()
+        if self.game['total_followers'] <= 0:
+            self.show_game_over("All followers have perished.")
+            return
 
-    def game_over(self, message):
+        stats = calculate_stats(self.game, self.items, self.elders)
+        gained = int(random.randint(5, 15) * stats['hunting_efficiency'])
+        self.game['resources']['food'] += gained
+        self.write_text(f"You find edible plants and herbs. +{gained} food.", '#4ec9b0')
+
+        self.finish_day(traveled=False)
+
+    # ═══════════════════════════════════════════════════════
+    # SAVE / LOAD  (Bug 13)
+    # ═══════════════════════════════════════════════════════
+
+    def save_game(self, slot):
+        """Serialize current game state to a save slot in player.json."""
+        try:
+            player_data = load_json('player.json')
+            player_data['save_slots'][slot] = self.game
+            with open('player.json', 'w') as f:
+                json.dump(player_data, f, indent=2)
+            messagebox.showinfo("Saved", f"Game saved to {slot.replace('_', ' ').title()}!")
+        except Exception as e:
+            messagebox.showerror("Save Failed", str(e))
+
+    def load_game(self, slot):
+        """Load a saved game from player.json and resume the journey."""
+        try:
+            player_data = load_json('player.json')
+            saved = player_data['save_slots'].get(slot)
+            if saved is None:
+                messagebox.showerror("No Save", f"No save data in {slot.replace('_', ' ').title()}.")
+                return
+            self.game = saved
+            self.update_status()
+            self.start_journey()
+        except Exception as e:
+            messagebox.showerror("Load Failed", str(e))
+
+    def show_save_screen(self):
+        """Show save-slot picker dialog."""
+        win = tk.Toplevel(self.root)
+        win.title("Save Game")
+        win.geometry("320x220")
+        win.configure(bg='#2b2b2b')
+        tk.Label(win, text="SAVE GAME", font=('Arial', 14, 'bold'),
+                 bg='#2b2b2b', fg='#4ec9b0').pack(pady=10)
+        for slot in ('slot_1', 'slot_2', 'slot_3'):
+            label = slot.replace('_', ' ').title()
+            tk.Button(win, text=label,
+                      command=lambda s=slot: [self.save_game(s), win.destroy()],
+                      font=('Arial', 12), bg='#0e639c', fg='white',
+                      padx=10, pady=5).pack(pady=5, fill=tk.X, padx=20)
+
+    def show_load_screen(self):
+        """Show load-slot picker dialog."""
+        win = tk.Toplevel(self.root)
+        win.title("Load Game")
+        win.geometry("360x240")
+        win.configure(bg='#2b2b2b')
+        tk.Label(win, text="LOAD GAME", font=('Arial', 14, 'bold'),
+                 bg='#2b2b2b', fg='#4ec9b0').pack(pady=10)
+        try:
+            player_data = load_json('player.json')
+        except Exception:
+            messagebox.showerror("Error", "Could not load player.json")
+            win.destroy()
+            return
+        for slot in ('slot_1', 'slot_2', 'slot_3'):
+            saved = player_data['save_slots'].get(slot)
+            label = slot.replace('_', ' ').title()
+            if saved:
+                label += f"  (Day {saved.get('day', '?')}, {saved.get('total_followers', '?')} followers)"
+            else:
+                label += "  [empty]"
+            state = tk.NORMAL if saved else tk.DISABLED
+            tk.Button(win, text=label, state=state,
+                      command=lambda s=slot: [self.load_game(s), win.destroy()],
+                      font=('Arial', 11), bg='#0e639c', fg='white',
+                      padx=10, pady=5).pack(pady=5, fill=tk.X, padx=20)
+
+    # ═══════════════════════════════════════════════════════
+    # GAME OVER
+    # ═══════════════════════════════════════════════════════
+
+    def show_game_over(self, message):
         """Handle game over scenario"""
         self.clear_text()
         self.clear_buttons()
-        
+
         self.write_text("=" * 60, '#f48771')
         self.write_text("GAME OVER".center(60), '#f48771')
         self.write_text("=" * 60, '#f48771')
         self.write_text(message, '#f48771')
-        
+
         self.add_button("RETURN TO MAIN MENU", self.show_intro, '#0e639c')
         self.add_button("QUIT", self.root.quit, '#f48771')
 

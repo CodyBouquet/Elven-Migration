@@ -50,6 +50,7 @@ def new_game():
         },
         
         'special_items': [],
+        'days_without_food': 0,
         'game_over': False,
     }
 

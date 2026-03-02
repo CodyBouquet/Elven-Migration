@@ -99,16 +99,22 @@ def daily_turn(game, stats, events_data):
     
     # Food consumption
     food_needed = game['total_followers'] // 10  # 1 food per 10 followers
-    food_consumed = int(food_needed / stats['food_efficiency'])
+    # Bug 6: food_efficiency > 1.0 means more efficient (less consumed). Division is correct.
+    food_consumed = max(1, int(food_needed / stats['food_efficiency']))
     game['resources']['food'] -= food_consumed
     print(f"🍖 Consumed {food_consumed} food")
-    
-    # Starvation
+
+    # Starvation — Bug 5 fix: escalating percentage-based deaths instead of abs(food)*2
     if game['resources']['food'] < 0:
-        deaths = abs(game['resources']['food']) * 2
-        game['total_followers'] -= deaths
         game['resources']['food'] = 0
-        print(f"💀 {deaths} followers starved to death!")
+        game['days_without_food'] = game.get('days_without_food', 0) + 1
+        pct = 0.01 * game['days_without_food']  # 1% per consecutive starving day
+        deaths = max(1, int(game['total_followers'] * pct))
+        deaths = min(deaths, game['total_followers'])
+        game['total_followers'] -= deaths
+        print(f"💀 {deaths} followers starved! (Day {game['days_without_food']} without food)")
+    else:
+        game['days_without_food'] = 0
     
     # Mana generation
     if stats['mana_generation'] > 0:
